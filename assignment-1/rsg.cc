@@ -44,14 +44,14 @@ static void readGrammar(ifstream& infile, map<string, Definition>& grammar)
  * Helper recursive function to expand a given non-terminal into terminals 
  * and append them to a resulting vector of terminals
  *
- * @param nonterminal: string denoting a possible non-terminal from a grammar
+ * @param nonterminal: const reference to string denoting a possible non-terminal from a grammar
  * @param grammar: reference to map from string to Definition that stores grammar rules
  * @param terminals: reference to vector of strings that's being populated with terminals from the CFG
  */
 
 static void expandNonTerminal(const string& nonterminal, map<string, Definition>& grammar, vector<string>& terminals)
 {
-  // first check if nonterminal is really a non-terminal
+  // check if nonterminal is really a non-terminal
   if (grammar.find(nonterminal) == grammar.end())
     terminals.push_back(nonterminal);
   else {
@@ -73,6 +73,34 @@ static void generateTerminals(map<string, Definition>& grammar, vector<string>& 
 {
   // start with <start>
   expandNonTerminal(string("<start>"), grammar, terminals);
+}
+
+/**
+ * Given a vector of terminals (strings), pretty-prints it into a terminal
+ *
+ * @param terminals: const ref to vector of strings containing sequence of terminals
+ */
+
+static void printTerminals(const vector<string>& terminals)
+{
+  cout << "     ";
+  unsigned int len = 5;
+  for (vector<string>::const_iterator curr = terminals.begin(); curr != terminals.end(); ++curr) {
+    vector<string>::const_iterator next = curr + 1;
+    if (next != terminals.end() && \
+	*next != "." && *next != "!" && *next != "," && *next != "?" && *next != ";") { 
+      cout << *curr << " ";
+      len = len + (curr->size() + 1);
+    } else {
+      cout << *curr;
+      len = len + curr->size();
+    }
+    if (len > 45) {
+      cout << "\n";
+      len = 0;
+    }    
+  } 
+  cout << endl;
 }
 
 /**
@@ -119,9 +147,7 @@ int main(int argc, char *argv[])
   generateTerminals(grammar, result);
 
   // print result
-  for (vector<string>::iterator curr = result.begin(); curr != result.end(); ++curr)
-    cout << *curr << " ";
-  cout << endl;
-    
+  printTerminals(result);
+  
   return 0;
 }
