@@ -49,10 +49,9 @@ static void readGrammar(ifstream& infile, map<string, Definition>& grammar)
  * @param terminals: reference to vector of strings that's being populated with terminals from the CFG
  */
 
-static void expandNonTerminal(string nonterminal, map<string, Definition>& grammar, vector<string>& terminals)
+static void expandNonTerminal(const string& nonterminal, map<string, Definition>& grammar, vector<string>& terminals)
 {
   // first check if nonterminal is really a non-terminal
-  // auto found_nonterm = grammar.find(nonterminal);
   if (grammar.find(nonterminal) == grammar.end())
     terminals.push_back(nonterminal);
   else {
@@ -73,13 +72,7 @@ static void expandNonTerminal(string nonterminal, map<string, Definition>& gramm
 static void generateTerminals(map<string, Definition>& grammar, vector<string>& terminals)
 {
   // start with <start>
-  Production prod = grammar[string("<start>")].getRandomProduction();
-  for (Production::iterator curr = prod.begin(); curr != prod.end(); ++curr) {
-    // if found non-terminal, expand it, otherwise add to resulting vector of terminals
-    if (grammar.find(*curr) != grammar.end())
-      expandNonTerminal(*curr, grammar, terminals);
-    else terminals.push_back(*curr);
-  }
+  expandNonTerminal(string("<start>"), grammar, terminals);
 }
 
 /**
