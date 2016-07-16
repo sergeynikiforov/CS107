@@ -8,6 +8,7 @@
  */
  
 #include <map>
+#include <string>
 #include <fstream>
 #include "definition.h"
 #include "production.h"
@@ -36,6 +37,48 @@ static void readGrammar(ifstream& infile, map<string, Definition>& grammar)
     infile.putback('{');
     Definition def(infile);
     grammar[def.getNonterminal()] = def;
+  }
+}
+
+/**
+ * Helper recursive function to expand a given non-terminal into terminals 
+ * and append them to a resulting vector of terminals
+ *
+ * @param nonterminal: string denoting a possible non-terminal from a grammar
+ * @param grammar: reference to map from string to Definition that stores grammar rules
+ * @param terminals: reference to vector of strings that's being populated with terminals from the CFG
+ */
+
+static void expandNonTerminal(string nonterminal, map<string, Definition>& grammar, vector<string>& terminals)
+{
+  // first check if nonterminal is really a non-terminal
+  // auto found_nonterm = grammar.find(nonterminal);
+  if (grammar.find(nonterminal) == grammar.end())
+    terminals.push_back(nonterminal);
+  else {
+    Production prod = grammar[nonterminal].getRandomProduction();
+    for (Production::iterator curr = prod.begin(); curr != prod.end(); ++curr)
+      expandNonTerminal(*curr, grammar, terminals);
+  }
+}
+
+/**
+ * Given a valid reference to an STL map storing the grammar (string->Definition), 
+ * generates random sequence of terminals in STL's vector.
+ * 
+ * @param grammar: reference to map from string to Definition that stores grammar rules
+ * @param terminals: reference to vector of strings that's being populated with terminals from the CFG
+ */
+
+static void generateTerminals(map<string, Definition>& grammar, vector<string>& terminals)
+{
+  // start with <start>
+  Production prod = grammar[string("<start>")].getRandomProduction();
+  for (Production::iterator curr = prod.begin(); curr != prod.end(); ++curr) {
+    // if found non-terminal, expand it, otherwise add to resulting vector of terminals
+    if (grammar.find(*curr) != grammar.end())
+      expandNonTerminal(*curr, grammar, terminals);
+    else terminals.push_back(*curr);
   }
 }
 
@@ -72,8 +115,20 @@ int main(int argc, char *argv[])
   // things are looking good...
   map<string, Definition> grammar;
   readGrammar(grammarFile, grammar);
+  
   cout << "The grammar file called \"" << argv[1] << "\" contains "
        << grammar.size() << " definitions." << endl;
-  
+
+  // create empty vector
+  vector<string> result;
+
+  // populate it
+  generateTerminals(grammar, result);
+
+  // print result
+  for (vector<string>::iterator curr = result.begin(); curr != result.end(); ++curr)
+    cout << *curr << " ";
+  cout << endl;
+    
   return 0;
 }
