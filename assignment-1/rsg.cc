@@ -84,21 +84,24 @@ static void generateTerminals(map<string, Definition>& grammar, vector<string>& 
 static void printTerminals(const vector<string>& terminals)
 {
   cout << "     ";
-  unsigned int len = 5;
+  unsigned int len = 5, limit = 55;
   for (vector<string>::const_iterator curr = terminals.begin(); curr != terminals.end(); ++curr) {
     vector<string>::const_iterator next = curr + 1;
     if (next != terminals.end() && \
 	*next != "." && *next != "!" && *next != "," && *next != "?" && *next != ";") { 
-      cout << *curr << " ";
-      len = len + (curr->size() + 1);
+      // next terminal is not a punctuation char
+      if (len + 1 + curr->size() > limit) {
+	cout << "\n" << *curr << " ";
+	len = curr->size() + 1;
+      } else {
+	cout << *curr << " ";
+	len = len + (curr->size() + 1);
+      }
     } else {
+      // next terminal is punctuation
       cout << *curr;
       len = len + curr->size();
-    }
-    if (len > 45) {
-      cout << "\n";
-      len = 0;
-    }    
+    }  
   } 
   cout << endl;
 }
@@ -112,11 +115,11 @@ static void printTerminals(const vector<string>& terminals)
 static void getNExpansions(const unsigned int n, map<string, Definition>& grammar)
 {
   for (unsigned int i = 0; i != n; ++i) {
-    cout << "Version #" << i + 1 << ": --------------\n";
+    cout << "Version #" << i + 1 << ": -----------------------\n";
     vector<string> result;
     generateTerminals(grammar, result);
     printTerminals(result);
-    //cout << endl;
+    cout << endl;
   }
 }
 
