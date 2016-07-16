@@ -112,7 +112,7 @@ static void printTerminals(const vector<string>& terminals)
 static void getNExpansions(const unsigned int n, map<string, Definition>& grammar)
 {
   for (unsigned int i = 0; i != n; ++i) {
-    cout << "Version #" << i + 1 << ": --------------\n";
+    cout << "Version #" << i + 1 << ": -----------------------\n";
     vector<string> result;
     generateTerminals(grammar, result);
     printTerminals(result);
