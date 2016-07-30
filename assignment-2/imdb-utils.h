@@ -39,13 +39,13 @@ struct film {
    *         between receiving object and argument are met.
    */
 
-  bool operator==(const film& rhs) const { 
-    return this->title == rhs.title && (this->year == rhs.year); 
+  bool operator==(const film& rhs) const {
+    return this->title == rhs.title && (this->year == rhs.year);
   }
-  
-  bool operator<(const film& rhs) const { 
-    return this->title < rhs.title || 
-           this->title == rhs.title && this->year < rhs.year; 
+
+  bool operator<(const film& rhs) const {
+    return this->title < rhs.title ||
+           this->title == rhs.title && this->year < rhs.year;
   }
 };
 
@@ -62,16 +62,15 @@ struct film {
 inline const char *determinePathToData(const char *userSelectedPath = NULL)
 {
   if (userSelectedPath != NULL) return userSelectedPath;
-  
-  const char *ostype = getenv("OSTYPE");
-  if (strcasecmp(ostype, "linux-gnu") == 0)
-    return "/usr/class/cs107/assignments/assn-2-six-degrees-data/little-endian/";
-  if (strcasecmp(ostype, "solaris") == 0)
-    return "/usr/class/cs107/assignments/assn-2-six-degrees-data/big-endian/";
-  
-  cerr << "Unsupported OS... bailing" << endl;
-  exit(1);
-  return NULL;
+  #ifdef __linux__
+      return "/home/dissolved/Dropbox/CS107/assignment-2/assn-2-six-degrees-data/actresses-only/little-endian/";
+  #elif __sun
+      return "/home/dissolved/Dropbox/CS107/assignment-2/assn-2-six-degrees-data/big-endian/";
+  #else
+      cerr << "Unsupported OS... bailing" << endl;
+      exit(1);
+      return NULL;
+  #endif
 }
 
 #endif
