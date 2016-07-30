@@ -1,2 +1,5 @@
 *.o
 *.dependencies
+GPATH
+GRTAGS
+GTAGS

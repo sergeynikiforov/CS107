@@ -1,0 +1,22 @@
+[
+    {
+        "command": "c++ -c -g -Wall -o imdb.o imdb.cc", 
+        "directory": "/home/dissolved/Dropbox/CS107/assignment-2", 
+        "file": "/home/dissolved/Dropbox/CS107/assignment-2/imdb.cc"
+    }, 
+    {
+        "command": "c++ -c -g -Wall -o imdb-test.o imdb-test.cc", 
+        "directory": "/home/dissolved/Dropbox/CS107/assignment-2", 
+        "file": "/home/dissolved/Dropbox/CS107/assignment-2/imdb-test.cc"
+    }, 
+    {
+        "command": "c++ -c -g -Wall -o path.o path.cc", 
+        "directory": "/home/dissolved/Dropbox/CS107/assignment-2", 
+        "file": "/home/dissolved/Dropbox/CS107/assignment-2/path.cc"
+    }, 
+    {
+        "command": "c++ -c -g -Wall -o six-degrees.o six-degrees.cc", 
+        "directory": "/home/dissolved/Dropbox/CS107/assignment-2", 
+        "file": "/home/dissolved/Dropbox/CS107/assignment-2/six-degrees.cc"
+    }
+]

@@ -4,25 +4,27 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <cstdlib>
+#include <strings.h>
 using namespace std;
 
 /**
  * Convenience struct: film
  * ------------------------
  * Bundles the name of a film and the year it was made
- * into a single struct.  It is a true struct in that the 
+ * into a single struct.  It is a true struct in that the
  * client is free to access both fields and change them at will
  * without issue.  operator== and operator< are implemented
- * so that films can be stored in STL containers requiring 
+ * so that films can be stored in STL containers requiring
  * such methods.
  */
 
 struct film {
-  
+
   string title;
   int year;
-  
-  /** 
+
+  /**
    * Methods: operator==
    *          operator<
    * -------------------
@@ -62,7 +64,7 @@ inline const char *determinePathToData(const char *userSelectedPath = NULL)
   if (userSelectedPath != NULL) return userSelectedPath;
   
   const char *ostype = getenv("OSTYPE");
-  if (strcasecmp(ostype, "linux") == 0)
+  if (strcasecmp(ostype, "linux-gnu") == 0)
     return "/usr/class/cs107/assignments/assn-2-six-degrees-data/little-endian/";
   if (strcasecmp(ostype, "solaris") == 0)
     return "/usr/class/cs107/assignments/assn-2-six-degrees-data/big-endian/";
