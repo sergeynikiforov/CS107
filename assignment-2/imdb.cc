@@ -3,6 +3,7 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <string.h>
 #include <iostream>
 #include "imdb.h"
 
@@ -15,7 +16,6 @@ imdb::imdb(const string& directory)
 {
   const string actorFileName = directory + "/" + kActorFileName;
   const string movieFileName = directory + "/" + kMovieFileName;
-  cout << "hello constructor!" << endl;
   actorFile = acquireFileMap(actorFileName, actorInfo);
   movieFile = acquireFileMap(movieFileName, movieInfo);
 }
@@ -26,9 +26,41 @@ bool imdb::good() const
 	    (movieInfo.fd == -1) );
 }
 
-// you should be implementing these two methods right here... 
-bool imdb::getCredits(const string& player, vector<film>& films) const { return false; }
-bool imdb::getCast(const film& movie, vector<string>& players) const { return false; }
+/**
+ * Returns void pointer to i-th Actor record (i is a given subscript)
+ */
+const void *imdb::getIthActorRecord(const unsigned int i) const {
+    int offset = ((int*)actorFile)[i + 1];
+    return (void*) &((char*)actorFile)[offset];
+}
+
+/**
+ * Returns void pointer to Actor record in question
+ */
+const void *imdb::getActorRecord(const string& name) const {
+    return actorFile;
+}
+
+/**
+ * Populates vector of films where a given player acted
+ * Returns true if the player has been found, false otherwise
+ *
+ */
+bool imdb::getCredits(const string& player, vector<film>& films) const {
+    int num_actors = *(int*) actorFile;
+    cout << "num actors: " << num_actors << endl;
+    cout << "first actor: " << string((char*)getActorRecord(0)) << endl;
+    return false;
+}
+
+/**
+ * Populates vector of strings (players) - full cast for a given movie
+ * Returns true if the movie has been found, false otherwise
+ *
+ */
+bool imdb::getCast(const film& movie, vector<string>& players) const {
+    return false;
+}
 
 imdb::~imdb()
 {
@@ -43,10 +75,8 @@ const void *imdb::acquireFileMap(const string& fileName, struct fileInfo& info)
   struct stat stats;
   stat(fileName.c_str(), &stats);
   info.fileSize = stats.st_size;
-  cout << "hello before!" << endl;
   info.fd = open(fileName.c_str(), O_RDONLY);
   info.fileMap = mmap(0, info.fileSize, PROT_READ, MAP_SHARED, info.fd, 0);
-  cout << "hello after!" << endl;
   return info.fileMap;
 }
 

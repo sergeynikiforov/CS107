@@ -38,6 +38,21 @@ class imdb {
   bool good() const;
 
   /**
+   * Method: getIthActorRecord
+   * ------------------------
+   * Returns void pointer to i-th Actor record
+   * @param i: subscript index of an actor in ActorFile
+   */
+  const void *getIthActorRecord(const unsigned int i) const;
+
+  /**
+   * Method: getActorRecord
+   * Performs bisect search
+   */
+  const void *getActorRecord(const string& name) const;
+
+
+  /**
    * Method: getCredits
    * ------------------
    * Searches for an actor/actress's list of movie credits.  The list
