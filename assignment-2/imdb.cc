@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
+#include <cstring>
 #include <iostream>
 #include "imdb.h"
 
@@ -36,8 +37,24 @@ const void *imdb::getIthActorRecord(const unsigned int i) const {
 
 /**
  * Returns void pointer to Actor record in question
+ * If the actor wasn't found, returns void ptr to actorFile
  */
-const void *imdb::getActorRecord(const string& name) const {
+const void *imdb::getActorRecord(const char* name) const {
+    int left = 0, right = *(int*) actorFile - 1, middle = (right + left)/2;
+    while (left <= right) {
+      char* current_name = (char*) getIthActorRecord(middle);
+      int compare_result = strcmp(name, current_name);
+      if (compare_result == 0)
+        return (void*) current_name;
+      if (compare_result < 0) {
+        right = middle - 1;
+        middle = (right + left)/2;
+      }
+      if (compare_result > 0) {
+        left = middle + 1;
+        middle = (right + left)/2;
+      }
+    }
     return actorFile;
 }
 
@@ -49,7 +66,8 @@ const void *imdb::getActorRecord(const string& name) const {
 bool imdb::getCredits(const string& player, vector<film>& films) const {
     int num_actors = *(int*) actorFile;
     cout << "num actors: " << num_actors << endl;
-    cout << "first actor: " << string((char*)getActorRecord(0)) << endl;
+    cout << "first actor: " << string((char*)getIthActorRecord(0)) << endl;
+    getActorRecord("Meryl Streep");
     return false;
 }
 

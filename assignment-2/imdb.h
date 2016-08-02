@@ -47,10 +47,12 @@ class imdb {
 
   /**
    * Method: getActorRecord
-   * Performs bisect search
+   * ----------------------
+   * Performs binary search, returns void ptr to ActorRecord if successfull,
+   * otherwise void ptr to actorFile
+   * @param name: name of an actor to search
    */
-  const void *getActorRecord(const string& name) const;
-
+  const void *getActorRecord(const char* name) const;
 
   /**
    * Method: getCredits

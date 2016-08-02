@@ -64,6 +64,8 @@ inline const char *determinePathToData(const char *userSelectedPath = NULL)
   if (userSelectedPath != NULL) return userSelectedPath;
   #ifdef __linux__
       return "/home/dissolved/Dropbox/CS107/assignment-2/assn-2-six-degrees-data/actresses-only/little-endian/";
+  #elif __APPLE__
+      return "/Users/sergey/Dropbox/CS107/assignment-2/assn-2-six-degrees-data/actresses-only/little-endian/";
   #elif __sun
       return "/home/dissolved/Dropbox/CS107/assignment-2/assn-2-six-degrees-data/big-endian/";
   #else
