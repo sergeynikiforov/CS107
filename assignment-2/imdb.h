@@ -43,7 +43,17 @@ class imdb {
    * Returns void pointer to i-th Actor record
    * @param i: subscript index of an actor in ActorFile
    */
+
   const void *getIthActorRecord(const unsigned int i) const;
+
+  /**
+   * Method: getIthMovieRecord
+   * ------------------------
+   * Returns void pointer to i-th Movie record
+   * @param i: subscript index of a movie in MovieFile
+   */
+
+  const void *getIthMovieRecord(const unsigned int i) const;
 
   /**
    * Method: getActorRecord

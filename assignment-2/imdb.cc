@@ -29,10 +29,19 @@ bool imdb::good() const
 
 /**
  * Returns void pointer to i-th Actor record (i is a given subscript)
+ * helper to binary search in getActorRecord
  */
 const void *imdb::getIthActorRecord(const unsigned int i) const {
     int offset = ((int*)actorFile)[i + 1];
     return (void*) &((char*)actorFile)[offset];
+}
+
+/**
+ * Returns void pointer to i-th Movie record (i is a given subscript)
+ */
+const void *imdb::getIthMovieRecord(const unsigned int i) const {
+    int offset = ((int*)movieFile)[i + 1];
+    return (void*) &((char*)movieFile)[offset];
 }
 
 /**
@@ -64,11 +73,47 @@ const void *imdb::getActorRecord(const char* name) const {
  *
  */
 bool imdb::getCredits(const string& player, vector<film>& films) const {
-    int num_actors = *(int*) actorFile;
-    cout << "num actors: " << num_actors << endl;
-    cout << "first actor: " << string((char*)getIthActorRecord(0)) << endl;
-    getActorRecord("Meryl Streep");
-    return false;
+    // get a ptr to Actor Record
+    const void *actor_record = getActorRecord(player.c_str());
+
+    // return false if no Actor has been found
+    if (actor_record == actorFile)
+      return false;
+
+    // get to the num of films starred
+    char *ptr = (char*) actor_record;
+
+    cout << "Found actor: " << string(ptr) << endl;
+
+    // length to check if additional padding is needed after name+num_films
+    short length = 1;
+    while (*ptr++ != '\0')
+      ++length;
+
+    // check for double '\0'
+    if (*ptr == '\0') {
+      ++ptr;
+      ++length;
+    }
+
+    // get num of films, set right after
+    short num_films = *(short*)ptr;
+    cout << "Number of films: " << num_films << endl;
+
+    // set offset depending on whether length + 2 is a multiple of 4
+    int *offset = ((length + 2) % 4 == 0) ? (int*)(((short*)ptr) + 1) : (int*)(((short*)ptr) + 2);
+
+    // iterate over offsets to movieFile, populate vector of films
+    for (short i = 0; i != num_films; ++i, ++offset) {
+      string movie_title(((char*) movieFile) + (*offset));
+      short movie_year = 1900 + *(((char*) movieFile) + (*offset) + movie_title.size() + 1);
+      film tmp = {
+        movie_title,
+        movie_year
+      };
+      films.push_back(tmp);
+    }
+    return true ;
 }
 
 /**
