@@ -65,6 +65,15 @@ class imdb {
   const void *getActorRecord(const char* name) const;
 
   /**
+   * Method: getMovieRecord
+   * ----------------------
+   * Performs binary search, returns void ptr to MovieRecord if successfull,
+   * otherwise void ptr to movieFile
+   * @param movie: const ref to a film to search
+   */
+  const void *getMovieRecord(const film& movie) const;
+
+  /**
    * Method: getCredits
    * ------------------
    * Searches for an actor/actress's list of movie credits.  The list
