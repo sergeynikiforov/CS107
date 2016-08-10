@@ -8,6 +8,60 @@
 #include "path.h"
 using namespace std;
 
+static void generateShortestPath(const string& source, const string& target, const imdb& db) {
+  list<path> partialPaths;
+  set<string> previouslySeenActors;
+  set<film> previouslySeenFilms;
+
+  // create a partial path around the source actor and add it to paths queue
+  partialPaths.push_back(path(source));
+
+  while (!partialPaths.empty() && (partialPaths.front().getLength() < 6)) {
+    // pull off front path
+    path frontPath(partialPaths.front());
+    partialPaths.pop_front();
+
+    // look through the last player's movies
+    vector<film> actorFilms;
+    if (db.getCredits(frontPath.getLastPlayer(), actorFilms)) {
+        for (vector<film>::iterator film_iter = actorFilms.begin(); film_iter != actorFilms.end(); ++film_iter) {
+          // for all unseen movies
+          if (previouslySeenFilms.find(*film_iter) == previouslySeenFilms.end()) {
+            // add to set of previously seen movies
+            previouslySeenFilms.insert(*film_iter);
+
+            // look up the film's cast
+            vector<string> filmCast;
+            if (db.getCast(*film_iter, filmCast)) {
+              for (vector<string>::iterator cast_iter = filmCast.begin(); cast_iter != filmCast.end(); ++cast_iter) {
+                // for all unseen actors
+                if (previouslySeenActors.find(*cast_iter) == previouslySeenActors.end()) {
+                  // add to previously seen actors
+                  previouslySeenActors.insert(*cast_iter);
+
+                  // clone the path
+                  path clonedPath = frontPath;
+
+                  // add connection
+                  clonedPath.addConnection(*film_iter, *cast_iter);
+
+                  // we found the target
+                  if (*cast_iter == target) {
+                    cout << clonedPath;
+                    return;
+                  } else {
+                    partialPaths.push_back(clonedPath);
+                  }
+                }
+              }
+            }
+          }
+      }
+    }
+  }
+  cout << endl << "No path between those two people could be found." << endl << endl;
+}
+
 /**
  * Using the specified prompt, requests that the user supply
  * the name of an actor or actress.  The code returns
@@ -69,8 +123,7 @@ int main(int argc, const char *argv[])
     if (source == target) {
       cout << "Good one.  This is only interesting if you specify two different people." << endl;
     } else {
-      // replace the following line by a call to your generateShortestPath routine... 
-      cout << endl << "No path between those two people could be found." << endl << endl;
+      generateShortestPath(source, target, db);
     }
   }
   
