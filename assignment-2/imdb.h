@@ -38,42 +38,6 @@ class imdb {
   bool good() const;
 
   /**
-   * Method: getIthActorRecord
-   * ------------------------
-   * Returns void pointer to i-th Actor record
-   * @param i: subscript index of an actor in ActorFile
-   */
-
-  const void *getIthActorRecord(const unsigned int i) const;
-
-  /**
-   * Method: getIthMovieRecord
-   * ------------------------
-   * Returns void pointer to i-th Movie record
-   * @param i: subscript index of a movie in MovieFile
-   */
-
-  const void *getIthMovieRecord(const unsigned int i) const;
-
-  /**
-   * Method: getActorRecord
-   * ----------------------
-   * Performs binary search, returns void ptr to ActorRecord if successfull,
-   * otherwise void ptr to actorFile
-   * @param name: name of an actor to search
-   */
-  const void *getActorRecord(const char* name) const;
-
-  /**
-   * Method: getMovieRecord
-   * ----------------------
-   * Performs binary search, returns void ptr to MovieRecord if successfull,
-   * otherwise void ptr to movieFile
-   * @param movie: const ref to a film to search
-   */
-  const void *getMovieRecord(const film& movie) const;
-
-  /**
    * Method: getCredits
    * ------------------
    * Searches for an actor/actress's list of movie credits.  The list
@@ -124,6 +88,42 @@ class imdb {
   static const char *const kMovieFileName;
   const void *actorFile;
   const void *movieFile;
+
+  /**
+   * Method: getIthActorRecord
+   * ------------------------
+   * Returns void pointer to i-th Actor record
+   * @param i: subscript index of an actor in ActorFile
+   */
+
+  const void *getIthActorRecord(const unsigned int i) const;
+
+  /**
+   * Method: getIthMovieRecord
+   * ------------------------
+   * Returns void pointer to i-th Movie record
+   * @param i: subscript index of a movie in MovieFile
+   */
+
+  const void *getIthMovieRecord(const unsigned int i) const;
+
+  /**
+   * Method: getActorRecord
+   * ----------------------
+   * Performs binary search, returns void ptr to ActorRecord if successfull,
+   * otherwise void ptr to actorFile
+   * @param name: name of an actor to search
+   */
+  const void *getActorRecord(const char* name) const;
+
+  /**
+   * Method: getMovieRecord
+   * ----------------------
+   * Performs binary search, returns void ptr to MovieRecord if successfull,
+   * otherwise void ptr to movieFile
+   * @param movie: const ref to a film to search
+   */
+  const void *getMovieRecord(const film& movie) const;
 
   // everything below here is complicated and needn't be touched.
   // you're free to investigate, but you're on your own.
