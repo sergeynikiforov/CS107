@@ -1,0 +1,32 @@
+[
+    {
+        "command": "cc -c -g -Wall -std=gnu99 -Wpointer-arith -o vectortest.o vectortest.c", 
+        "directory": "/home/dissolved/Dropbox/CS107/assignment-3", 
+        "file": "/home/dissolved/Dropbox/CS107/assignment-3/vectortest.c"
+    }, 
+    {
+        "command": "cc -c -g -Wall -std=gnu99 -Wpointer-arith -o vector.o vector.c", 
+        "directory": "/home/dissolved/Dropbox/CS107/assignment-3", 
+        "file": "/home/dissolved/Dropbox/CS107/assignment-3/vector.c"
+    }, 
+    {
+        "command": "cc -c -g -Wall -std=gnu99 -Wpointer-arith -o hashsettest.o hashsettest.c", 
+        "directory": "/home/dissolved/Dropbox/CS107/assignment-3", 
+        "file": "/home/dissolved/Dropbox/CS107/assignment-3/hashsettest.c"
+    }, 
+    {
+        "command": "cc -c -g -Wall -std=gnu99 -Wpointer-arith -o hashset.o hashset.c", 
+        "directory": "/home/dissolved/Dropbox/CS107/assignment-3", 
+        "file": "/home/dissolved/Dropbox/CS107/assignment-3/hashset.c"
+    }, 
+    {
+        "command": "cc -c -g -Wall -std=gnu99 -Wpointer-arith -o thesaurus-lookup.o thesaurus-lookup.c", 
+        "directory": "/home/dissolved/Dropbox/CS107/assignment-3", 
+        "file": "/home/dissolved/Dropbox/CS107/assignment-3/thesaurus-lookup.c"
+    }, 
+    {
+        "command": "cc -c -g -Wall -std=gnu99 -Wpointer-arith -o streamtokenizer.o streamtokenizer.c", 
+        "directory": "/home/dissolved/Dropbox/CS107/assignment-3", 
+        "file": "/home/dissolved/Dropbox/CS107/assignment-3/streamtokenizer.c"
+    }
+]
