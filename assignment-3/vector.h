@@ -172,8 +172,8 @@ void *VectorNth(const vector *v, int position);
  * ----------------------
  * Inserts a new element into the specified vector, placing it at the specified position.
  * An assert is raised if n is less than 0 or greater than the logical length.
- * The vector elements after the supplied position will be shifted over to make room. 
- * The element is passed by address: The new element's contents are copied from 
+ * The vector elements after the supplied position will be shifted over to make room.
+ * The element is passed by address: The new element's contents are copied from
  * the memory pointed to by elemAddr.  This method runs in linear time.
  */
 
@@ -182,24 +182,24 @@ void VectorInsert(vector *v, const void *elemAddr, int position);
 /**
  * Function: VectorAppend
  * ----------------------
- * Appends a new element to the end of the specified vector.  The element is 
- * passed by address, and the element contents are copied from the memory pointed 
- * to by elemAddr.  Note that right after this call, the new element will be 
- * the last in the vector; i.e. its element number will be the logical length 
- * minus 1.  This method must run in constant time (neglecting the memory reallocation 
+ * Appends a new element to the end of the specified vector.  The element is
+ * passed by address, and the element contents are copied from the memory pointed
+ * to by elemAddr.  Note that right after this call, the new element will be
+ * the last in the vector; i.e. its element number will be the logical length
+ * minus 1.  This method must run in constant time (neglecting the memory reallocation
  * time which may be required occasionally).
  */
 
 void VectorAppend(vector *v, const void *elemAddr);
-  
+
 /**
  * Function: VectorReplace
  * -----------------------
- * Overwrites the element at the specified position with a new value.  Before 
+ * Overwrites the element at the specified position with a new value.  Before
  * being overwritten, the VectorFreeFunction that was supplied to VectorNew is levied
  * against the old element.  Then that position in the vector will get a new value by
  * copying the new element's contents from the memory pointed to by elemAddr.
- * An assert is raised if n is less than 0 or greater than the logical length 
+ * An assert is raised if n is less than 0 or greater than the logical length
  * minus one.  None of the other elements are affected or rearranged by this
  * operation, and the size of the vector remains constant. This method must
  * operate in constant time.
@@ -210,19 +210,19 @@ void VectorReplace(vector *v, const void *elemAddr, int position);
 /**
  * Function: VectorDelete
  * ----------------------
- * Deletes the element at the specified position from the vector. Before the 
+ * Deletes the element at the specified position from the vector. Before the
  * element is removed,  the ArrayFreeFunction that was supplied to VectorNew
  * will be called on the element.
  *
- * An assert is raised if position is less than 0 or greater than the logical length 
- * minus one.  All the elements after the specified position will be shifted over to fill 
- * the gap.  This method runs in linear time.  It does not shrink the 
- * allocated size of the vector when an element is deleted; the vector just 
+ * An assert is raised if position is less than 0 or greater than the logical length
+ * minus one.  All the elements after the specified position will be shifted over to fill
+ * the gap.  This method runs in linear time.  It does not shrink the
+ * allocated size of the vector when an element is deleted; the vector just
  * stays over-allocated.
  */
 
 void VectorDelete(vector *v, int position);
-  
+
 /* 
  * Function: VectorSearch
  * ----------------------

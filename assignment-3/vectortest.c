@@ -12,7 +12,7 @@
 /**
  * PrintChar
  * ---------
- * Mapping function used to print one character element in a vector.  
+ * Mapping function used to print one character element in a vector.
  * The file pointer is passed as the client data, so that it can be
  * used to print to any FILE *.
  */
@@ -48,12 +48,12 @@ static void TestAppend(vector *alphabet)
 {
   char ch;
   int i;
-  
+
   for (ch = 'A'; ch <= 'Z'; ch++)   //  Start with letters of alphabet
     VectorAppend(alphabet, &ch);
   fprintf(stdout, "First, here is the alphabet: ");
   VectorMap(alphabet, PrintChar, stdout);
-  
+
   for (i = 0; i < 10; i++) {	    // Append digit characters
     ch = '0' + i;                   // convert int to ASCII digit character
     VectorAppend(alphabet, &ch);
@@ -75,11 +75,11 @@ static void TestAppend(vector *alphabet)
 static void TestSearch(vector *v, char ch)
 {
   int foundSorted, foundNot;
-  
-  foundSorted = VectorSearch(v, &ch, CompareChar, 0, true); // Test sorted 
-  foundNot = VectorSearch(v, &ch, CompareChar, 0, false);   // Not sorted 
-  fprintf(stdout,"\nFound '%c' in sorted array? %s. How about unsorted? %s.", 
-	  ch, YES_OR_NO((foundSorted != -1)), 
+
+  foundSorted = VectorSearch(v, &ch, CompareChar, 0, true); // Test sorted
+  foundNot = VectorSearch(v, &ch, CompareChar, 0, false);   // Not sorted
+  fprintf(stdout,"\nFound '%c' in sorted array? %s. How about unsorted? %s.",
+	  ch, YES_OR_NO((foundSorted != -1)),
 	  YES_OR_NO((foundNot != -1)));
 }
 
