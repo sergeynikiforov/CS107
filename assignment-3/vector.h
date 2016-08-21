@@ -1,15 +1,15 @@
-/** 
+/**
  * File: vector.h
  * ---------------
  * Defines the interface for the vector.
  *
  * The vector allows the client to store any number of elements of any desired
- * primitive type and is appropriate for a wide variety of storage problems.  It 
+ * primitive type and is appropriate for a wide variety of storage problems.  It
  * supports efficient element access and appending/inserting/deleting elements
- * as well as optional sorting and searching.  In all cases, the vector imposes 
- * no upper bound on the number of elements and deals with all its own memory 
- * management. The client specifies the size (in bytes) of the elements that 
- * will be stored in the vector when it is created.  Thereafter the client and 
+ * as well as optional sorting and searching.  In all cases, the vector imposes
+ * no upper bound on the number of elements and deals with all its own memory
+ * management. The client specifies the size (in bytes) of the elements that
+ * will be stored in the vector when it is created.  Thereafter the client and
  * the vector can refer to elements via (void *) ptrs.
  */
 
@@ -22,11 +22,11 @@
  * Type: VectorCompareFunction
  * ---------------------------
  * VectorCompareFunction is a pointer to a client-supplied function which the
- * vector uses to sort or search for elements.  The comparator takes two 
+ * vector uses to sort or search for elements.  The comparator takes two
  * (const void *) pointers (these will point to elements) and returns an int.
  * The comparator should indicate the ordering of the two elements
  * using the same convention as the strcmp library function:
- * 
+ *
  *   If elemAddr1 is less than elemAddr2, return a negative number.
  *   If elemAddr1 is greater than elemAddr2, return a positive number.
  *   If the two elements are equal, return 0.
@@ -34,7 +34,7 @@
 
 typedef int (*VectorCompareFunction)(const void *elemAddr1, const void *elemAddr2);
 
-/** 
+/**
  * Type: VectorMapFunction
  * -----------------------
  * VectorMapFunction defines the space of functions that can be used to map over
@@ -45,12 +45,12 @@ typedef int (*VectorCompareFunction)(const void *elemAddr1, const void *elemAddr
 
 typedef void (*VectorMapFunction)(void *elemAddr, void *auxData);
 
-/** 
+/**
  * Type: VectorFreeFunction
  * ---------------------------------
  * VectorFreeFunction defines the space of functions that can be used as the
  * clean-up function for each element as it is deleted from the vector
- * or when the entire vector is destroyed.  The cleanup function is 
+ * or when the entire vector is destroyed.  The cleanup function is
  * called with a pointer to an element about to be deleted.
  */
 
@@ -61,26 +61,30 @@ typedef void (*VectorFreeFunction)(void *elemAddr);
  * ------------
  * Defines the concrete representation of
  * the vector.  Even though everything is
- * exposed, the client should respect the 
+ * exposed, the client should respect the
  * the privacy of the representation and initialize,
  * dispose of, and otherwise interact with a
  * vector using those functions defined in this file.
  */
 
 typedef struct {
-  // to be filled in by you
+    void *elems;
+    int elemSize;
+    int logicalLength;
+    int allocatedLength;
+    VectorFreeFunction freeFunc;
 } vector;
 
-/** 
+/**
  * Function: VectorNew
  * Usage: vector myFriends;
  *        VectorNew(&myFriends, sizeof(char *), StringFree, 10);
  * -------------------
  * Constructs a raw or previously destroyed vector to be the
  * empty vector.
- * 
- * The elemSize parameter specifies the number of bytes that a single 
- * element of the vector should take up.  For example, if you want to store 
+ *
+ * The elemSize parameter specifies the number of bytes that a single
+ * element of the vector should take up.  For example, if you want to store
  * elements of type char *, you would pass sizeof(char *) as this parameter.
  * An assert is raised if the size is not greater than zero.
  *
@@ -88,25 +92,25 @@ typedef struct {
  * is about to be deleted (using VectorDelete) or on each element in the
  * vector when the entire vector is being freed (using VectorDispose).  This function
  * is your chance to do any deallocation/cleanup required for the element
- * (such as freeing/deleting any pointers contained in the element). The client can pass 
+ * (such as freeing/deleting any pointers contained in the element). The client can pass
  * NULL for the ArrayFreeFunction if the elements don't require any special handling.
  *
- * The initialAllocation parameter specifies the initial allocated length 
- * of the vector, as well as the dynamic reallocation increment for those times when the 
- * vector needs to grow.  Rather than growing the vector one element at a time as 
- * elements are added (inefficient), you will grow the vector 
+ * The initialAllocation parameter specifies the initial allocated length
+ * of the vector, as well as the dynamic reallocation increment for those times when the
+ * vector needs to grow.  Rather than growing the vector one element at a time as
+ * elements are added (inefficient), you will grow the vector
  * in chunks of initialAllocation size.  The allocated length is the number
- * of elements for which space has been allocated: the logical length 
+ * of elements for which space has been allocated: the logical length
  * is the number of those slots currently being used.
- * 
+ *
  * A new vector pre-allocates space for initialAllocation elements, but the
  * logical length is zero.  As elements are added, those allocated slots fill
- * up, and when the initial allocation is all used, grow the vector by another 
+ * up, and when the initial allocation is all used, grow the vector by another
  * initialAllocation elements.  You will continue growing the vector in chunks
  * like this as needed.  Thus the allocated length will always be a multiple
- * of initialAllocation.  Don't worry about using realloc to shrink the vector's 
- * allocation if a bunch of elements get deleted.  It turns out that 
- * many implementations of realloc don't even pay attention to such a request, 
+ * of initialAllocation.  Don't worry about using realloc to shrink the vector's
+ * allocation if a bunch of elements get deleted.  It turns out that
+ * many implementations of realloc don't even pay attention to such a request,
  * so there is little point in asking.  Just leave the vector over-allocated and no
  * one will care.
  *
@@ -117,7 +121,7 @@ typedef struct {
  * initialAllocation size.  You want to minimize the number of reallocations, but
  * you don't want to pre-allocate all that much memory if you don't expect to use very
  * much of it.  If the client passes 0 for initialAllocation, the implementation
- * will use the default value of its own choosing.  As assert is raised is 
+ * will use the default value of its own choosing.  As assert is raised is
  * the initialAllocation value is less than 0.
  */
 
@@ -127,9 +131,9 @@ void VectorNew(vector *v, int elemSize, VectorFreeFunction freefn, int initialAl
  * Function: VectorDispose
  *           VectorDispose(&studentsDroppingTheCourse);
  * -----------------------
- * Frees up all the memory of the specified vector and its elements.  It does *not* 
- * automatically free memory owned by pointers embedded in the elements. 
- * This would require knowledge of the structure of the elements, which the 
+ * Frees up all the memory of the specified vector and its elements.  It does *not*
+ * automatically free memory owned by pointers embedded in the elements.
+ * This would require knowledge of the structure of the elements, which the
  * vector does not have.  However, it *will* iterate over the elements calling
  * the VectorFreeFunction previously supplied to VectorNew.
  */
@@ -144,25 +148,25 @@ void VectorDispose(vector *v);
  */
 
 int VectorLength(const vector *v);
-	   
+
 /**
  * Method: VectorNth
  * -----------------
- * Returns a pointer to the element numbered position in the vector.  
- * Numbering begins with 0.  An assert is raised if n is less than 0 or greater 
- * than the logical length minus 1.  Note this function returns a pointer into 
+ * Returns a pointer to the element numbered position in the vector.
+ * Numbering begins with 0.  An assert is raised if n is less than 0 or greater
+ * than the logical length minus 1.  Note this function returns a pointer into
  * the vector's storage, so the pointer should be used with care.
  * This method must operate in constant time.
  *
  * We could have written the vector without this sort of access, but it
- * is useful and efficient to offer it, although the client needs to be 
- * careful when using it.  In particular, a pointer returned by VectorNth 
- * becomes invalid after any calls which involve insertion into, deletion from or 
+ * is useful and efficient to offer it, although the client needs to be
+ * careful when using it.  In particular, a pointer returned by VectorNth
+ * becomes invalid after any calls which involve insertion into, deletion from or
  * sorting of the vector, as all of these may rearrange the elements to some extent.
- */ 
+ */
 
 void *VectorNth(const vector *v, int position);
-					  
+
 /**
  * Function: VectorInsert
  * ----------------------
