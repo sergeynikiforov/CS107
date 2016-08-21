@@ -223,7 +223,7 @@ void VectorReplace(vector *v, const void *elemAddr, int position);
 
 void VectorDelete(vector *v, int position);
 
-/* 
+/*
  * Function: VectorSearch
  * ----------------------
  * Searches the specified vector for an element whose contents match
@@ -231,19 +231,19 @@ void VectorDelete(vector *v, int position);
  * for equality.  The startIndex parameter controls where the search
  * starts.  If the client desires to search the entire vector,
  * they should pass 0 as the startIndex.  The method will search from
- * there to the end of the vector.  The isSorted parameter allows the client 
+ * there to the end of the vector.  The isSorted parameter allows the client
  * to specify that the vector is already in sorted order, in which case VectorSearch
- * uses a faster binary search.  If isSorted is false, a simple linear search is 
+ * uses a faster binary search.  If isSorted is false, a simple linear search is
  * used.  If a match is found, the position of the matching element is returned;
- * else the function returns -1.  Calling this function does not 
+ * else the function returns -1.  Calling this function does not
  * re-arrange or change contents of the vector or modify the key in any way.
- * 
+ *
  * An assert is raised if startIndex is less than 0 or greater than
  * the logical length (although searching from logical length will never
  * find anything, allowing this case means you can search an entirely empty
  * vector from 0 without getting an assert).  An assert is raised if the
  * comparator or the key is NULL.
- */  
+ */
 
 int VectorSearch(const vector *v, const void *key, VectorCompareFunction searchfn, int startIndex, bool isSorted);
 
@@ -251,7 +251,7 @@ int VectorSearch(const vector *v, const void *key, VectorCompareFunction searchf
  * Function: VectorSort
  * --------------------
  * Sorts the vector into ascending order according to the supplied
- * comparator.  The numbering of the elements will change to reflect the 
+ * comparator.  The numbering of the elements will change to reflect the
  * new ordering.  An assert is raised if the comparator is NULL.
  */
 
@@ -261,10 +261,10 @@ void VectorSort(vector *v, VectorCompareFunction comparefn);
  * Method: VectorMap
  * -----------------
  * Iterates over the elements of the vector in order (from element 0 to
- * element n-1, inclusive) and calls the function mapfn on each element.  The function is 
- * called with the address of the vector element and the auxData pointer.  
- * The auxData value allows the client to pass extra state information to 
- * the client-supplied function, if necessary.  If no client data is required, 
+ * element n-1, inclusive) and calls the function mapfn on each element.  The function is
+ * called with the address of the vector element and the auxData pointer.
+ * The auxData value allows the client to pass extra state information to
+ * the client-supplied function, if necessary.  If no client data is required,
  * this argument should be NULL.  An assert is raised if the mapfn function is NULL.
  */
 

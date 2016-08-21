@@ -120,12 +120,47 @@ void VectorDelete(vector *v, int position)
 }
 
 void VectorSort(vector *v, VectorCompareFunction compare)
-{}
+{
+    assert(compare != NULL);
+    qsort(v->elems, v->logicalLength, v->elemSize, compare);
+}
 
 void VectorMap(vector *v, VectorMapFunction mapFn, void *auxData)
-{}
+{
+    assert(mapFn != NULL);
+
+    // iterate over the vector elements calling mapFn
+    char *cur = (char*) v->elems;
+    char *end = ((char*) v->elems) + v->elemSize * v->logicalLength;
+    while (cur != end) {
+        mapFn(cur, auxData);
+        cur += v->elemSize;
+    }
+}
 
 static const int kNotFound = -1;
 
 int VectorSearch(const vector *v, const void *key, VectorCompareFunction searchFn, int startIndex, bool isSorted)
-{ return -1; }
+{
+    assert(startIndex >= 0);
+    assert(startIndex <= v->logicalLength);
+
+    void *startAddr = ((char*) v->elems) + v->elemSize * startIndex;
+    void *foundAddr = NULL;
+
+    // use binary search if the vector is sorted
+    if (isSorted)
+        foundAddr = bsearch(key, startAddr, v->logicalLength - startIndex, v->elemSize, searchFn);
+    else {
+        char *cur = (char*) startAddr;
+        char *end = ((char*) v->elems) + v->elemSize * v->logicalLength;
+        while (cur != end) {
+            if (searchFn(key, cur) == 0) {
+                foundAddr = (void*)cur;
+                break;
+            }
+            cur += v->elemSize;
+        }
+    }
+    return (foundAddr == NULL) ? kNotFound : ((char*) foundAddr - (char*) v->elems)/v->elemSize;
+}
