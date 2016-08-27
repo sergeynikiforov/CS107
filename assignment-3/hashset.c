@@ -49,7 +49,39 @@ void HashSetMap(hashset *h, HashSetMapFunction mapfn, void *auxData)
 {}
 
 void HashSetEnter(hashset *h, const void *elemAddr)
-{}
+{
+    assert(elemAddr != NULL);
+
+    // hash the element, determine the bucket
+    int bucketNum = h->hashfn(elemAddr, h->numBuckets);
+    assert(bucketNum >= 0);
+    assert(bucketNum < h->numBuckets);
+
+    // get the vector, try to find the element
+    vector **vPtr = (vector**) h->buckets + bucketNum;
+    int searchRes = VectorSearch(*vPtr, elemAddr, h->comparefn, 0, true);
+
+    // if nothing found, append the element, sort the vector, else - replace the element
+    if (searchRes == -1) {
+        VectorAppend(*vPtr, elemAddr);
+        VectorSort(*vPtr, h->comparefn);
+        h->numElements++;
+    } else VectorReplace(*vPtr, elemAddr, searchRes);
+}
 
 void *HashSetLookup(const hashset *h, const void *elemAddr)
-{ return NULL; }
+{
+    assert(elemAddr != NULL);
+
+    // hash the element, determine the bucket
+    int bucketNum = h->hashfn(elemAddr, h->numBuckets);
+    assert(bucketNum >= 0);
+    assert(bucketNum < h->numBuckets);
+
+    // get the vector, try to find the element
+    vector **vPtr = (vector**) h->buckets + bucketNum;
+    int searchRes = VectorSearch(*vPtr, elemAddr, h->comparefn, 0, true);
+
+    // if nothing found, return NULL, else - addr on an element
+    return (searchRes == -1) ? NULL : VectorNth(*vPtr, searchRes);
+}
