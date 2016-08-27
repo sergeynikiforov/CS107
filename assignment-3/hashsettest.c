@@ -101,7 +101,7 @@ static void BuildTableOfLetterCounts(hashset *counts)
       localFreq.occurrences = 1;
       
       // See if we already have an entry for this char		
-      found = (struct frequency *) HashSetLookup(counts, &localFreq);	
+      found = (struct frequency *) HashSetLookup(counts, &localFreq);
       if (found != NULL) 		// increment if already there 
 	localFreq.occurrences = found->occurrences + 1;
       HashSetEnter(counts, &localFreq); // enter should overwrite if needed
@@ -140,32 +140,32 @@ static void TestHashTable(void)
 {
   hashset counts;
   vector sortedCounts;
-  
+
   HashSetNew(&counts, sizeof(struct frequency), kNumBuckets, HashFrequency, CompareLetter, NULL);
-  
+
   fprintf(stdout, "\n\n ------------------------- Starting the HashTable test\n");
   BuildTableOfLetterCounts(&counts);
-  
+
   fprintf(stdout, "Here is the unordered contents of the table:\n");
   HashSetMap(&counts, PrintFrequency, stdout);  // print contents of table
-  
+
   VectorNew(&sortedCounts, sizeof(struct frequency), NULL, 0);
   HashSetMap(&counts, AddFrequency, &sortedCounts);   // add all freq to array
   VectorSort(&sortedCounts, CompareLetter);      // sort by char
   fprintf(stdout, "\nHere are the trials sorted by char: \n");
   VectorMap(&sortedCounts, PrintFrequency, stdout);
-  
+
   VectorSort(&sortedCounts, CompareOccurrences); //sort by occurrences
   fprintf(stdout, "\nHere are the trials sorted by occurrence & char: \n");
-  VectorMap(&sortedCounts, PrintFrequency, stdout);	// print out array 
-  
-  VectorDispose(&sortedCounts);				// free all storage 
+  VectorMap(&sortedCounts, PrintFrequency, stdout);	// print out array
+
+  VectorDispose(&sortedCounts);				// free all storage
   HashSetDispose(&counts);
 }
 
-int main(int ununsed, char **alsoUnused) 
+int main(int ununsed, char **alsoUnused)
 {
-  TestHashTable();	
+  TestHashTable();
   return 0;
 }
 

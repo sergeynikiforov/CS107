@@ -9,7 +9,7 @@
 
 void VectorNew(vector *v, int elemSize, VectorFreeFunction freeFn, int initialAllocation)
 {
-    assert(initialAllocation > 0);
+    assert(initialAllocation >= 0);
     v->elemSize = elemSize;
     v->logicalLength = 0;
     v->allocatedLength = (initialAllocation == 0) ? DEFAULT_ALLOC_SIZE : initialAllocation;
@@ -23,9 +23,9 @@ void VectorDispose(vector *v)
     if (v->freeFunc != NULL) {
         // iterate over all vector elements, calling custom free function
         char *cur = (char*) v->elems;
-        char *end = ((char*) v->elems) + v->elemSize * v->logicalLength;
+        char *end = ((char*) v->elems) + (v->elemSize) * (v->logicalLength);
         while (cur != end) {
-            v->freeFunc(cur);
+            v->freeFunc((void*)cur);
             cur += v->elemSize;
         }
     }

@@ -5,4 +5,6 @@ GRTAGS
 GTAGS
 assn-2-six-degrees-data/*
 assn-2-six-degrees-data
+assn-3-vector-hashset-data/*
+assn-3-vector-hashset-data
 .DS_Store

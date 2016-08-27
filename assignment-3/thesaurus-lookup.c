@@ -9,7 +9,7 @@
 #include <time.h>    // for time
 
 /**
- * Convenience struct used to bundle a word (expressed 
+ * Convenience struct used to bundle a word (expressed
  * as a dynamically allocated C string) with the list
  * of all of its synonyms (stored in a C vector of
  * dynamically allocated C strings).
@@ -37,14 +37,14 @@ static int StringHash(const void *elem, int numBuckets)
 {
   char *s = *(char **) elem;
   unsigned long hashcode = 0;
-  for (int i = 0; i < strlen(s); i++)  
-    hashcode = hashcode * kHashMultiplier + tolower(s[i]);  
-  return hashcode % numBuckets;                                  
+  for (int i = 0; i < strlen(s); i++)
+    hashcode = hashcode * kHashMultiplier + tolower(s[i]);
+  return hashcode % numBuckets;
 }
 
 /**
  * Compares the two C strings planted at the specified addresses.
- * elem1 and elem2 are statically identified as void *s, but 
+ * elem1 and elem2 are statically identified as void *s, but
  * we know that they're really char **s.  We cast and deferences
  * to arrive at char *s, and let strcmp do the traditional comparison
  * and use its return value as our own.
@@ -77,12 +77,12 @@ static void ThesEntryFree(void *elem)
   thesaurusEntry *entry = elem;
   free(entry->word);
   VectorDispose(&entry->synonyms);
-} 
+}
 
 /**
  * Disposes of the char * addressed by elem.  Simple
  * wrapper to free.
- * 
+ *
  * @param elem
  */
 
@@ -154,7 +154,7 @@ static void ReadThesaurus(hashset *thesaurus, const char *filename)
     fprintf(stderr, "Could not open thesaurus file named \"%s\"\n", filename);
     exit(1);
   }
-  
+
   streamtokenizer st;
   STNew(&st, infile, ",\n", false);
   TokenizeAndBuildThesaurus(thesaurus, &st);
@@ -179,7 +179,7 @@ static int RandomInteger(int low, int high)
     srand(time(NULL));
     randomized = true;
   }
-  
+
   double percent = rand()/((double) RAND_MAX + 1);
   int offset = (high - low + 1) * percent;
   return low + offset;
@@ -225,8 +225,8 @@ int main(int argc, const char *argv[])
 {
   hashset thesaurus;
   HashSetNew(&thesaurus, sizeof(thesaurusEntry), kApproximateWordCount, StringHash, StringCompare, ThesEntryFree);
-  const char *thesaurusFileName = (argc == 1) ? 
-    "/usr/class/cs107/assignments/assn-3-vector-hashset-data/thesaurus.txt" : argv[1];
+  const char *thesaurusFileName = (argc == 1) ?
+      "/home/dissolved/Dropbox/CS107/assignment-3/assn-3-vector-hashset-data/thesaurus.txt" : argv[1];
   ReadThesaurus(&thesaurus, thesaurusFileName);
   QueryThesaurus(&thesaurus);
   HashSetDispose(&thesaurus);
