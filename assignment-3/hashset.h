@@ -145,7 +145,7 @@ void HashSetDispose(hashset *h);
 /**
  * Function: HashSetCount
  * ----------------------
- * Returns the number of elements residing in 
+ * Returns the number of elements residing in
  * the specified hashset.
  */
 
