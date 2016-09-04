@@ -35,13 +35,13 @@ static bool WordIsWellFormed(const char *word);
  *
  * Think very carefully about how you're going to keep track of
  * all of the stop words, how you're going to keep track of
- * all the previously seen articles, and how you're going to 
+ * all the previously seen articles, and how you're going to
  * map words to the collection of news articles where that
  * word appears.
  */
 
-static const char *const kWelcomeTextFile = "/usr/class/cs107/assignments/assn-4-rss-news-search-data/welcome.txt";
-static const char *const kDefaultFeedsFile = "/usr/class/cs107/assignments/assn-4-rss-news-search-data/rss-feeds.txt";
+static const char *const kWelcomeTextFile = "/home/dissolved/Dropbox/CS107/assignment-4/assn-4-rss-news-search-data/welcome.txt";
+static const char *const kDefaultFeedsFile = "/home/dissolved/Dropbox/CS107/assignment-4/assn-4-rss-news-search-data/rss-feeds-my.txt";
 int main(int argc, char **argv)
 {
   Welcome(kWelcomeTextFile);
@@ -50,7 +50,7 @@ int main(int argc, char **argv)
   return 0;
 }
 
-/** 
+/**
  * Function: Welcome
  * -----------------
  * Displays the contents of the specified file, which
@@ -61,24 +61,24 @@ int main(int argc, char **argv)
  * build of the application.  It's as if welcomeTextFileName
  * is a configuration file that travels with the application.
  */
- 
+
 static const char *const kNewLineDelimiters = "\r\n";
 static void Welcome(const char *welcomeTextFileName)
 {
   FILE *infile;
   streamtokenizer st;
   char buffer[1024];
-  
+
   infile = fopen(welcomeTextFileName, "r");
-  assert(infile != NULL);    
-  
+  assert(infile != NULL);
+
   STNew(&st, infile, kNewLineDelimiters, true);
   while (STNextToken(&st, buffer, sizeof(buffer))) {
     printf("%s\n", buffer);
   }
-  
+
   printf("\n");
-  STDispose(&st); // remember that STDispose doesn't close the file, since STNew doesn't open one.. 
+  STDispose(&st); // remember that STDispose doesn't close the file, since STNew doesn't open one..
   fclose(infile);
 }
 
@@ -103,16 +103,16 @@ static void BuildIndices(const char *feedsFileName)
   FILE *infile;
   streamtokenizer st;
   char remoteFileName[1024];
-  
+
   infile = fopen(feedsFileName, "r");
   assert(infile != NULL);
   STNew(&st, infile, kNewLineDelimiters, true);
-  while (STSkipUntil(&st, ":") != EOF) { // ignore everything up to the first selicolon of the line
+  while (STSkipUntil(&st, ":") != EOF) { // ignore everything up to the first semicolon of the line
     STSkipOver(&st, ": ");		 // now ignore the semicolon and any whitespace directly after it
-    STNextToken(&st, remoteFileName, sizeof(remoteFileName));   
+    STNextToken(&st, remoteFileName, sizeof(remoteFileName));
     ProcessFeed(remoteFileName);
   }
-  
+
   STDispose(&st);
   fclose(infile);
   printf("\n");
@@ -132,23 +132,36 @@ static void ProcessFeed(const char *remoteDocumentName)
 {
   url u;
   urlconnection urlconn;
-  
+
   URLNewAbsolute(&u, remoteDocumentName);
   URLConnectionNew(&urlconn, &u);
-  
+  printf("full url: %s\n", urlconn.fullUrl);
+  printf("response msg: %s\n", urlconn.responseMessage);
+  printf("response code: %d\n", urlconn.responseCode);
+  int c = 0;
+  if (urlconn.dataStream) {
+      while ((c = getc(urlconn.dataStream)) != EOF)
+          putchar(c);
+      fclose(urlconn.dataStream);
+  }
+
   switch (urlconn.responseCode) {
-      case 0: printf("Unable to connect to \"%s\".  Ignoring...", u.serverName);
-              break;
-      case 200: PullAllNewsItems(&urlconn);
-                break;
-      case 301: 
-      case 302: ProcessFeed(urlconn.newUrl);
-                break;
-      default: printf("Connection to \"%s\" was established, but unable to retrieve \"%s\". [response code: %d, response message:\"%s\"]\n",
+      case 0:
+          printf("Unable to connect to \"%s\".  Ignoring...", u.serverName);
+          break;
+      case 200:
+          PullAllNewsItems(&urlconn);
+          break;
+      case 301:
+      case 302:
+          ProcessFeed(urlconn.newUrl);
+          break;
+      default:
+          printf("Connection to \"%s\" was established, but unable to retrieve \"%s\". [response code: %d, response message:\"%s\"]\n",
 		      u.serverName, u.fileName, urlconn.responseCode, urlconn.responseMessage);
-	       break;
+          break;
   };
-  
+
   URLConnectionDispose(&urlconn);
   URLDispose(&u);
 }
@@ -186,9 +199,10 @@ static void PullAllNewsItems(urlconnection *urlconn)
   streamtokenizer st;
   STNew(&st, urlconn->dataStream, kTextDelimiters, false);
   while (GetNextItemTag(&st)) { // if true is returned, then assume that <item ...> has just been read and pulled from the data stream
-    ProcessSingleNewsItem(&st);
+      printf("HELLO!\n");
+      ProcessSingleNewsItem(&st);
   }
-  
+
   STDispose(&st);
 }
 
@@ -197,8 +211,8 @@ static void PullAllNewsItems(urlconnection *urlconn)
  * ------------------------
  * Works more or less like GetNextTag below, but this time
  * we're searching for an <item> tag, since that marks the
- * beginning of a block of HTML that's relevant to us.  
- * 
+ * beginning of a block of HTML that's relevant to us.
+ *
  * Note that each tag is compared to "<item" and not "<item>".
  * That's because the item tag, though unlikely, could include
  * attributes and perhaps look like any one of these:
@@ -221,7 +235,7 @@ static bool GetNextItemTag(streamtokenizer *st)
     if (strncasecmp(htmlTag, kItemTagPrefix, strlen(kItemTagPrefix)) == 0) {
       return true;
     }
-  }	 
+  }
   return false;
 }
 
@@ -231,7 +245,7 @@ static bool GetNextItemTag(streamtokenizer *st)
  * Code which parses the contents of a single <item> node within an RSS/XML feed.
  * At the moment this function is called, we're to assume that the <item> tag was just
  * read and that the streamtokenizer is currently pointing to everything else, as with:
- *   
+ *
  *      <title>Carrie Underwood takes American Idol Crown</title>
  *      <description>Oklahoma farm girl beats out Alabama rocker Bo Bice and 100,000 other contestants to win competition.</description>
  *      <link>http://www.nytimes.com/frontpagenews/2841028302.html</link>
@@ -255,13 +269,16 @@ static void ProcessSingleNewsItem(streamtokenizer *st)
   char articleDescription[1024];
   char articleURL[1024];
   articleTitle[0] = articleDescription[0] = articleURL[0] = '\0';
-  
+
   while (GetNextTag(st, htmlTag, sizeof(htmlTag)) && (strcasecmp(htmlTag, kItemEndTag) != 0)) {
-    if (strncasecmp(htmlTag, kTitleTagPrefix, strlen(kTitleTagPrefix)) == 0) ExtractElement(st, htmlTag, articleTitle, sizeof(articleTitle));
-    if (strncasecmp(htmlTag, kDescriptionTagPrefix, strlen(kDescriptionTagPrefix)) == 0) ExtractElement(st, htmlTag, articleDescription, sizeof(articleDescription));
-    if (strncasecmp(htmlTag, kLinkTagPrefix, strlen(kLinkTagPrefix)) == 0) ExtractElement(st, htmlTag, articleURL, sizeof(articleURL));
+    if (strncasecmp(htmlTag, kTitleTagPrefix, strlen(kTitleTagPrefix)) == 0)
+        ExtractElement(st, htmlTag, articleTitle, sizeof(articleTitle));
+    if (strncasecmp(htmlTag, kDescriptionTagPrefix, strlen(kDescriptionTagPrefix)) == 0)
+        ExtractElement(st, htmlTag, articleDescription, sizeof(articleDescription));
+    if (strncasecmp(htmlTag, kLinkTagPrefix, strlen(kLinkTagPrefix)) == 0)
+        ExtractElement(st, htmlTag, articleURL, sizeof(articleURL));
   }
-  
+
   if (strncmp(articleURL, "", sizeof(articleURL)) == 0) return;     // punt, since it's not going to take us anywhere
   ParseArticle(articleTitle, articleDescription, articleURL);
 }
@@ -284,7 +301,7 @@ static void ProcessSingleNewsItem(streamtokenizer *st)
  * for the description data to be missing, so we need to cover all three scenarious (I've actually seen all three.)
  * It would be quite unusual for the title and/or link fields to be empty, but this handles those possibilities too.
  */
- 
+
 static void ExtractElement(streamtokenizer *st, const char *htmlTag, char dataBuffer[], int bufferLength)
 {
   assert(htmlTag[strlen(htmlTag) - 1] == '>');
@@ -296,7 +313,7 @@ static void ExtractElement(streamtokenizer *st, const char *htmlTag, char dataBu
   STSkipOver(st, ">");
 }
 
-/** 
+/**
  * Function: ParseArticle
  * ----------------------
  * Attempts to establish a network connect to the news article identified by the three
@@ -326,7 +343,8 @@ static void ParseArticle(const char *articleTitle, const char *articleDescriptio
 
   URLNewAbsolute(&u, articleURL);
   URLConnectionNew(&urlconn, &u);
-  
+  printf("Full URL: %s\n", urlconn.fullUrl);
+
   switch (urlconn.responseCode) {
       case 0: printf("Unable to connect to \"%s\".  Domain name or IP address is nonexistent.\n", articleURL);
 	      break;
@@ -342,7 +360,7 @@ static void ParseArticle(const char *articleTitle, const char *articleDescriptio
       default: printf("Unable to pull \"%s\" from \"%s\". [Response code: %d] Punting...\n", articleTitle, u.serverName, urlconn.responseCode);
 	       break;
   }
-  
+
   URLConnectionDispose(&urlconn);
   URLDispose(&u);
 }
@@ -381,12 +399,12 @@ static void ScanArticle(streamtokenizer *st, const char *articleTitle, const cha
 
   printf("\tWe counted %d well-formed words [including duplicates].\n", numWords);
   printf("\tThe longest word scanned was \"%s\".", longestWord);
-  if (strlen(longestWord) >= 15 && (strchr(longestWord, '-') == NULL)) 
+  if (strlen(longestWord) >= 15 && (strchr(longestWord, '-') == NULL))
     printf(" [Ooooo... long word!]");
   printf("\n");
 }
 
-/** 
+/**
  * Function: QueryIndices
  * ----------------------
  * Standard query loop that allows the user to specify a single search term, and
@@ -406,7 +424,7 @@ static void QueryIndices()
   }
 }
 
-/** 
+/**
  * Function: ProcessResponse
  * -------------------------
  * Placeholder implementation for what will become the search of a set of indices
@@ -429,9 +447,9 @@ static void ProcessResponse(const char *word)
  * Before we allow a word to be inserted into our map
  * of indices, we'd like to confirm that it's a good search term.
  * One could generalize this function to allow different criteria, but
- * this version hard codes the requirement that a word begin with 
+ * this version hard codes the requirement that a word begin with
  * a letter of the alphabet and that all letters are either letters, numbers,
- * or the '-' character.  
+ * or the '-' character.
  */
 
 static bool WordIsWellFormed(const char *word)
@@ -440,7 +458,7 @@ static bool WordIsWellFormed(const char *word)
   if (strlen(word) == 0) return true;
   if (!isalpha((int) word[0])) return false;
   for (i = 1; i < strlen(word); i++)
-    if (!isalnum((int) word[i]) && (word[i] != '-')) return false; 
+    if (!isalnum((int) word[i]) && (word[i] != '-')) return false;
 
   return true;
 }

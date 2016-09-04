@@ -60,7 +60,7 @@ typedef struct {
  *                              we should NOT expect the new URL to exist forever.)
  *			   403 (we don't have permission to access the specified document)
  *			   404 (the document could not be found.)
- *      
+ *
  *      (If the response code is set to 0, then all other fields are meaningless.)
  *      responseMessage: The text message that the web server issued in response to the request for
  *			 a web document.  Messages like "OK", "Forbidden", and "Document Not Found"
@@ -79,7 +79,7 @@ typedef struct {
  *      dataStream: Used to read in the content of the remote HTTP document.  The FILE * is normally used to read
  *                  data from a local file, but the magic of UNIX allows us to layer local file access semantics over
  *                  a network connection and to pull in remote data as if it were local.
- *      
+ *
  */
 
 void URLConnectionNew(urlconnection* urlconn, const url* u);
@@ -91,7 +91,7 @@ void URLConnectionNew(urlconnection* urlconn, const url* u);
  * urlconnection, closes the connection to the relevant
  * server, and releases all dynamically allocated strings.
  */
- 
+
 void URLConnectionDispose(urlconnection* urlconn);
 
 #endif //__url_connection_

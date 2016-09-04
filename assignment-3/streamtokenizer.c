@@ -10,7 +10,7 @@ void STNew(streamtokenizer *st, FILE *infile, const char *delimiters, bool disca
   assert(infile != NULL);
   assert(delimiters != NULL);
   assert(strlen(delimiters) > 0);
-  
+
   st->infile = infile;
   st->discardDelimiters = discardDelimiters;
   st->delimiters = strdup(delimiters);
@@ -30,10 +30,10 @@ bool STNextTokenUsingDifferentDelimiters(streamtokenizer *st, char buffer[], int
 {
   int i;
   int next;
-  
+
   assert(buffer != NULL);
   assert(bufferLength >= 2);
-  
+
   if (st->discardDelimiters) STSkipOver(st, delimiters);
   next = getc(st->infile);
   if (next == EOF) return false;

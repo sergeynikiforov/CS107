@@ -10,13 +10,13 @@ CC = gcc
 ## a production build, but it is a good idea to leave it in
 ## for the purposes of this class.
 DFLAG = ## -DNDEBUG
-
-ifeq ($(OSTYPE), solaris)
+UNAME = $(shell uname)
+ifeq ($(UNAME), solaris)
 	SOCKETLIB = -lsocket
 endif
 
-CFLAGS = -g -Wall -std=gnu99 -Wno-unused-function $(DFLAG)
-LDFLAGS = -g $(SOCKETLIB) -lnsl -lrssnews -L/usr/class/cs107/assignments/assn-4-rss-news-search-lib/$(OSTYPE)
+CFLAGS = -g -Wall -std=gnu99 -Wno-unused-function $(DFLAG) -m32 -lcurl 
+LDFLAGS = -g $(SOCKETLIB) -lnsl -lrssnews -L/home/dissolved/Dropbox/CS107/assignment-4/assn-4-rss-news-search-lib/$(UNAME)
 PFLAGS= -linker=/usr/pubsw/bin/ld -best-effort
 
 EFENCELIBS= -L/usr/class/cs107/lib -lefence  -pthread
@@ -31,7 +31,7 @@ default : $(TARGET)
 rss-news-search : $(OBJS)
 	$(CC) $(OBJS) $(CFLAGS)$(LDFLAGS) -o $@
 
-efence : rss-news-search.efence  
+efence : rss-news-search.efence
 
 rss-news-search.efence : $(OBJS)
 	$(CC) $(OBJS) $(CFLAGS)$(LDFLAGS) $(EFENCELIBS) -o $@
