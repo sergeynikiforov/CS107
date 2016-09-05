@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <string.h>
 #include <ctype.h>
+#include <curl/curl.h>
 
 #include "url.h"
 #include "bool.h"
@@ -44,9 +45,11 @@ static const char *const kWelcomeTextFile = "/home/dissolved/Dropbox/CS107/assig
 static const char *const kDefaultFeedsFile = "/home/dissolved/Dropbox/CS107/assignment-4/assn-4-rss-news-search-data/rss-feeds-my.txt";
 int main(int argc, char **argv)
 {
+  curl_global_init(CURL_GLOBAL_ALL);
   Welcome(kWelcomeTextFile);
   BuildIndices((argc == 1) ? kDefaultFeedsFile : argv[1]);
   QueryIndices();
+  curl_global_cleanup();
   return 0;
 }
 
@@ -134,15 +137,18 @@ static void ProcessFeed(const char *remoteDocumentName)
   urlconnection urlconn;
 
   URLNewAbsolute(&u, remoteDocumentName);
-  URLConnectionNew(&urlconn, &u);
+  MyURLConnectionNew(&urlconn, &u);
   printf("full url: %s\n", urlconn.fullUrl);
   printf("response msg: %s\n", urlconn.responseMessage);
+  printf("content type: %s\n", urlconn.contentType);
   printf("response code: %d\n", urlconn.responseCode);
+
   int c = 0;
   if (urlconn.dataStream) {
       while ((c = getc(urlconn.dataStream)) != EOF)
           putchar(c);
-      fclose(urlconn.dataStream);
+//      fclose(urlconn.dataStream);
+      rewind(urlconn.dataStream);
   }
 
   switch (urlconn.responseCode) {
@@ -162,7 +168,7 @@ static void ProcessFeed(const char *remoteDocumentName)
           break;
   };
 
-  URLConnectionDispose(&urlconn);
+  MyURLConnectionDispose(&urlconn);
   URLDispose(&u);
 }
 
@@ -199,7 +205,6 @@ static void PullAllNewsItems(urlconnection *urlconn)
   streamtokenizer st;
   STNew(&st, urlconn->dataStream, kTextDelimiters, false);
   while (GetNextItemTag(&st)) { // if true is returned, then assume that <item ...> has just been read and pulled from the data stream
-      printf("HELLO!\n");
       ProcessSingleNewsItem(&st);
   }
 
@@ -342,26 +347,30 @@ static void ParseArticle(const char *articleTitle, const char *articleDescriptio
   streamtokenizer st;
 
   URLNewAbsolute(&u, articleURL);
-  URLConnectionNew(&urlconn, &u);
+  MyURLConnectionNew(&urlconn, &u);
   printf("Full URL: %s\n", urlconn.fullUrl);
 
   switch (urlconn.responseCode) {
-      case 0: printf("Unable to connect to \"%s\".  Domain name or IP address is nonexistent.\n", articleURL);
+      case 0:
+          printf("Unable to connect to \"%s\".  Domain name or IP address is nonexistent.\n", articleURL);
 	      break;
-      case 200: printf("Scanning \"%s\" from \"http://%s\"\n", articleTitle, u.serverName);
-	        STNew(&st, urlconn.dataStream, kTextDelimiters, false);
-		ScanArticle(&st, articleTitle, articleDescription, articleURL);
-		STDispose(&st);
-		break;
+      case 200:
+          printf("Scanning \"%s\" from \"http://%s\"\n", articleTitle, u.serverName);
+	      STNew(&st, urlconn.dataStream, kTextDelimiters, false);
+          ScanArticle(&st, articleTitle, articleDescription, articleURL);
+          STDispose(&st);
+          break;
       case 301:
-      case 302: // just pretend we have the redirected URL all along, though index using the new URL and not the old one...
-                ParseArticle(articleTitle, articleDescription, urlconn.newUrl);
-		break;
-      default: printf("Unable to pull \"%s\" from \"%s\". [Response code: %d] Punting...\n", articleTitle, u.serverName, urlconn.responseCode);
-	       break;
+      case 302:
+          // just pretend we have the redirected URL all along, though index using the new URL and not the old one...
+          ParseArticle(articleTitle, articleDescription, urlconn.newUrl);
+          break;
+      default:
+          printf("Unable to pull \"%s\" from \"%s\". [Response code: %d] Punting...\n", articleTitle, u.serverName, urlconn.responseCode);
+          break;
   }
 
-  URLConnectionDispose(&urlconn);
+  MyURLConnectionDispose(&urlconn);
   URLDispose(&u);
 }
 
@@ -401,7 +410,7 @@ static void ScanArticle(streamtokenizer *st, const char *articleTitle, const cha
   printf("\tThe longest word scanned was \"%s\".", longestWord);
   if (strlen(longestWord) >= 15 && (strchr(longestWord, '-') == NULL))
     printf(" [Ooooo... long word!]");
-  printf("\n");
+  printf("\nexit scan article\n");
 }
 
 /**

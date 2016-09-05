@@ -1,4 +1,4 @@
-/** 
+/**
  * File: url.h
  * -----------
  * Exports the url type.
@@ -41,16 +41,16 @@ typedef struct {
  *
  *    Either one of the above would initialize stanfordDeptsURL to be:
  *
- *            { 
+ *            {
  *              "www.stanford.edu/home/academics/departments.html",
  *              "www.stanford.edu",
  *              "home/academics/departments.html",
- *              80 
+ *              80
  *            }
  *
- * URLNewAbsolute(&kottkeURL, "http://www.kottke.org"); 
- * 
- *    The above populates kottkeURL with 
+ * URLNewAbsolute(&kottkeURL, "http://www.kottke.org");
+ *
+ *    The above populates kottkeURL with
  *
  *            {
  *              "www.kottke.org",
@@ -67,7 +67,7 @@ void URLNewAbsolute(url *u, const char *absolutePath);
  * Usage: URLNewRelative(&kottkeContactURL, &kottkeURL, "/about/contact.html");
  * ----------------------------------------------------------------------------
  * Initializes the contents of the first url from the information embedded within
- * the parentURL and the relativePath string. 
+ * the parentURL and the relativePath string.
  *
  * URLNewRelative(&kottkeContactURL, &kottkeURL, "/about/contact.html");
  *
@@ -83,7 +83,7 @@ void URLNewAbsolute(url *u, const char *absolutePath);
  *
  * If the relative path is actually an absolute path, then the information
  * within the parentURL is ignored and the url address by u is initialized
- * as if URLNewAbsolute(u, relativePath) were called.  So... 
+ * as if URLNewAbsolute(u, relativePath) were called.  So...
  *
  * URLNewRelative(&bookURL, &amazonTop25FictionURL, "http://www.kiterunner.com/nytimesReview.html");
  * would result in bookURL being set to contain:

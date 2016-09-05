@@ -3,5 +3,10 @@
         "command": "cc -c -g -Wall -std=gnu99 -Wno-unused-function -m32 -o rss-news-search.o rss-news-search.c", 
         "directory": "/home/dissolved/Dropbox/CS107/assignment-4", 
         "file": "/home/dissolved/Dropbox/CS107/assignment-4/rss-news-search.c"
+    }, 
+    {
+        "command": "cc -c -g -Wall -std=gnu99 -Wno-unused-function -m32 -o urlconnection.o urlconnection.c", 
+        "directory": "/home/dissolved/Dropbox/CS107/assignment-4", 
+        "file": "/home/dissolved/Dropbox/CS107/assignment-4/urlconnection.c"
     }
 ]

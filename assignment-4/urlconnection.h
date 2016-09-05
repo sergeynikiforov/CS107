@@ -32,10 +32,11 @@
 
 typedef struct {
   int responseCode;
-  const char *responseMessage;
-  const char *contentType;
-  const char *fullUrl;
-  const char *newUrl;
+  char *responseMessage;
+  char *contentType;
+  char *fullUrl;
+  char *newUrl;
+  char *ptr;
   FILE *dataStream;
 } urlconnection;
 
@@ -83,6 +84,7 @@ typedef struct {
  */
 
 void URLConnectionNew(urlconnection* urlconn, const url* u);
+void MyURLConnectionNew(urlconnection* urlconn, const url* u);
 
 /**
  * Function: URLConnection
@@ -93,5 +95,6 @@ void URLConnectionNew(urlconnection* urlconn, const url* u);
  */
 
 void URLConnectionDispose(urlconnection* urlconn);
+void MyURLConnectionDispose(urlconnection* urlconn);
 
 #endif //__url_connection_
