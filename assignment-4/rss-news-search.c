@@ -14,10 +14,10 @@
 
 static void Welcome(const char *welcomeTextFileName);
 static void BuildIndices(const char *feedsFileName);
-static void ProcessFeed(const char *remoteDocumentName);
-static void PullAllNewsItems(urlconnection *urlconn);
+static void ProcessFeed(const char *remoteDocumentName, hashset *seenUrls);
+static void PullAllNewsItems(urlconnection *urlconn, hashset *seenUrls);
 static bool GetNextItemTag(streamtokenizer *st);
-static void ProcessSingleNewsItem(streamtokenizer *st);
+static void ProcessSingleNewsItem(streamtokenizer *st, hashset *seenUrls);
 static void ExtractElement(streamtokenizer *st, const char *htmlTag, char dataBuffer[], int bufferLength);
 static void ParseArticle(const char *articleTitle, const char *articleDescription, const char *articleURL);
 static void ScanArticle(streamtokenizer *st, const char *articleTitle, const char *unused, const char *articleURL);
@@ -51,7 +51,7 @@ static const char *const kDefaultFeedsFile = "/home/dissolved/Dropbox/CS107/assi
 static const char *const stopWordsFile = "/home/dissolved/Dropbox/CS107/assignment-4/assn-4-rss-news-search-data/stop-words.txt";
 int main(int argc, char **argv)
 {
-    // stopwords is a hashset of char** - ptr to dynamically allocated C-strings
+    // stopwords and seenUrls are a hashset of char** - ptr to dynamically allocated C-strings
     hashset stopwords;
     HashSetNew(&stopwords, sizeof(char**), 701, StringHash, StringCompare, StringFree);
     BuildStopwordsHash(stopWordsFile, &stopwords);
@@ -119,6 +119,8 @@ static void BuildIndices(const char *feedsFileName)
   FILE *infile;
   streamtokenizer st;
   char remoteFileName[1024];
+  hashset seenUrls;
+  HashSetNew(&seenUrls, sizeof(char**), 1001, StringHash, StringCompare, StringFree);
 
   infile = fopen(feedsFileName, "r");
   assert(infile != NULL);
@@ -126,9 +128,10 @@ static void BuildIndices(const char *feedsFileName)
   while (STSkipUntil(&st, ":") != EOF) { // ignore everything up to the first semicolon of the line
     STSkipOver(&st, ": ");		 // now ignore the semicolon and any whitespace directly after it
     STNextToken(&st, remoteFileName, sizeof(remoteFileName));
-    ProcessFeed(remoteFileName);
+    ProcessFeed(remoteFileName, &seenUrls);
   }
-
+  printf("\nNumber of parsed articles: %d\n", HashSetCount(&seenUrls));
+  HashSetDispose(&seenUrls);
   STDispose(&st);
   fclose(infile);
   printf("\n");
@@ -144,7 +147,7 @@ static void BuildIndices(const char *feedsFileName)
  * for ParseArticle for information about what the different response codes mean.
  */
 
-static void ProcessFeed(const char *remoteDocumentName)
+static void ProcessFeed(const char *remoteDocumentName, hashset *seenUrls)
 {
   url u;
   urlconnection urlconn;
@@ -169,11 +172,11 @@ static void ProcessFeed(const char *remoteDocumentName)
           printf("Unable to connect to \"%s\".  Ignoring...", u.serverName);
           break;
       case 200:
-          PullAllNewsItems(&urlconn);
+          PullAllNewsItems(&urlconn, seenUrls);
           break;
       case 301:
       case 302:
-          ProcessFeed(urlconn.newUrl);
+          ProcessFeed(urlconn.newUrl, seenUrls);
           break;
       default:
           printf("Connection to \"%s\" was established, but unable to retrieve \"%s\". [response code: %d, response message:\"%s\"]\n",
@@ -213,12 +216,12 @@ static void ProcessFeed(const char *remoteDocumentName)
  */
 
 static const char *const kTextDelimiters = " \t\n\r\b!@$%^*()_+={[}]|\\'\":;/?.>,<~`";
-static void PullAllNewsItems(urlconnection *urlconn)
+static void PullAllNewsItems(urlconnection *urlconn, hashset *seenUrls)
 {
   streamtokenizer st;
   STNew(&st, urlconn->dataStream, kTextDelimiters, false);
   while (GetNextItemTag(&st)) { // if true is returned, then assume that <item ...> has just been read and pulled from the data stream
-      ProcessSingleNewsItem(&st);
+      ProcessSingleNewsItem(&st, seenUrls);
   }
 
   STDispose(&st);
@@ -280,7 +283,7 @@ static const char *const kItemEndTag = "</item>";
 static const char *const kTitleTagPrefix = "<title";
 static const char *const kDescriptionTagPrefix = "<description";
 static const char *const kLinkTagPrefix = "<link";
-static void ProcessSingleNewsItem(streamtokenizer *st)
+static void ProcessSingleNewsItem(streamtokenizer *st, hashset *seenUrls)
 {
   char htmlTag[1024];
   char articleTitle[1024];
@@ -298,7 +301,19 @@ static void ProcessSingleNewsItem(streamtokenizer *st)
   }
 
   if (strncmp(articleURL, "", sizeof(articleURL)) == 0) return;     // punt, since it's not going to take us anywhere
-  ParseArticle(articleTitle, articleDescription, articleURL);
+
+  // check if it's the first time we're parsing the article
+  char *url = strdup(articleURL);
+  if (HashSetLookup(seenUrls, &url) == NULL) {
+      // add to hashset
+      HashSetEnter(seenUrls, &url);
+
+      // parse the article
+      ParseArticle(articleTitle, articleDescription, articleURL);
+  } else {
+      free(url);
+      return;
+  }
 }
 
 /**
