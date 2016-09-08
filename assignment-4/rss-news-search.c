@@ -10,6 +10,7 @@
 #include "urlconnection.h"
 #include "streamtokenizer.h"
 #include "html-utils.h"
+#include "hashset.h"
 
 static void Welcome(const char *welcomeTextFileName);
 static void BuildIndices(const char *feedsFileName);
@@ -23,6 +24,10 @@ static void ScanArticle(streamtokenizer *st, const char *articleTitle, const cha
 static void QueryIndices();
 static void ProcessResponse(const char *word);
 static bool WordIsWellFormed(const char *word);
+static void BuildStopwordsHash(const char *stopWordsFileName, hashset *stopwords);
+static int StringHash(const void *elem, int numBuckets);
+static int StringCompare(const void *elem1, const void *elem2);
+static void StringFree(void *elem);
 
 /**
  * Function: main
@@ -43,14 +48,22 @@ static bool WordIsWellFormed(const char *word);
 
 static const char *const kWelcomeTextFile = "/home/dissolved/Dropbox/CS107/assignment-4/assn-4-rss-news-search-data/welcome.txt";
 static const char *const kDefaultFeedsFile = "/home/dissolved/Dropbox/CS107/assignment-4/assn-4-rss-news-search-data/rss-feeds-my.txt";
+static const char *const stopWordsFile = "/home/dissolved/Dropbox/CS107/assignment-4/assn-4-rss-news-search-data/stop-words.txt";
 int main(int argc, char **argv)
 {
-  curl_global_init(CURL_GLOBAL_ALL);
-  Welcome(kWelcomeTextFile);
-  BuildIndices((argc == 1) ? kDefaultFeedsFile : argv[1]);
-  QueryIndices();
-  curl_global_cleanup();
-  return 0;
+    // stopwords is a hashset of char** - ptr to dynamically allocated C-strings
+    hashset stopwords;
+    HashSetNew(&stopwords, sizeof(char**), 701, StringHash, StringCompare, StringFree);
+    BuildStopwordsHash(stopWordsFile, &stopwords);
+
+    curl_global_init(CURL_GLOBAL_ALL);
+    Welcome(kWelcomeTextFile);
+    BuildIndices((argc == 1) ? kDefaultFeedsFile : argv[1]);
+    QueryIndices();
+    curl_global_cleanup();
+
+    HashSetDispose(&stopwords);
+    return 0;
 }
 
 /**
@@ -395,22 +408,21 @@ static void ScanArticle(streamtokenizer *st, const char *articleTitle, const cha
 
   while (STNextToken(st, word, sizeof(word))) {
     if (strcasecmp(word, "<") == 0) {
-      SkipIrrelevantContent(st); // in html-utls.h
+        SkipIrrelevantContent(st); // in html-utls.h
     } else {
-      RemoveEscapeCharacters(word);
-      if (WordIsWellFormed(word)) {
-	numWords++;
-	if (strlen(word) > strlen(longestWord))
-	  strcpy(longestWord, word);
-      }
+        RemoveEscapeCharacters(word);
+        if (WordIsWellFormed(word)) {
+            numWords++;
+            if (strlen(word) > strlen(longestWord))
+                strcpy(longestWord, word);
+        }
     }
   }
 
   printf("\tWe counted %d well-formed words [including duplicates].\n", numWords);
   printf("\tThe longest word scanned was \"%s\".", longestWord);
   if (strlen(longestWord) >= 15 && (strchr(longestWord, '-') == NULL))
-    printf(" [Ooooo... long word!]");
-  printf("\nexit scan article\n");
+      printf(" [Ooooo... long word!]");
 }
 
 /**
@@ -470,4 +482,84 @@ static bool WordIsWellFormed(const char *word)
     if (!isalnum((int) word[i]) && (word[i] != '-')) return false;
 
   return true;
+}
+
+/**
+ *
+ * Function to build stopwords hashset: BuildStopwordsHash
+ * -------------------------------------------------------
+ * Builds a hashset from a given text-file of stopwords - words that are too common
+ * to count as good search terms.
+ */
+
+static void BuildStopwordsHash(const char *stopWordsFileName, hashset *stopwords)
+{
+  FILE *infile;
+  char *buffer = NULL, *word = NULL;
+  size_t len = 0;
+  ssize_t read;
+  infile = fopen(stopWordsFileName, "r");
+  assert(infile != NULL);
+
+  // read lines from the file, stripping off the newline char after each word
+  while ((read = getline(&buffer, &len, infile)) != -1) {
+      buffer = strsep(&buffer, "\n");
+      word = strdup(buffer);
+      HashSetEnter(stopwords, &word);
+  }
+  printf("\nNumber of elements in stopwords hashset: %d\n", HashSetCount(stopwords));
+  free(buffer);
+  fclose(infile);
+}
+
+/**
+ * Hash function provided by the goddess of lecturing,
+ * Julie Zelenski.  I'm not sure where it came from, but
+ * I'm guessing the multiplier is standard.
+ *
+ * @param elem a void * which is understood to be the address
+ *             of a char *, which itself addresses the first of
+ *             a series of characters making up a C string.
+ * @param numBuckets the number of buckets in the hash table.
+ * @return the hashcode of the C string addressed by elem.
+ */
+
+static const signed long kHashMultiplier = -1664117991L;
+static int StringHash(const void *elem, int numBuckets)
+{
+    char *s = *(char **) elem;
+    unsigned long hashcode = 0;
+    for (int i = 0; i < strlen(s); i++)
+        hashcode = hashcode * kHashMultiplier + tolower(s[i]);
+    return hashcode % numBuckets;
+}
+
+/**
+ * Compares the two C strings planted at the specified addresses.
+ * elem1 and elem2 are statically identified as void *s, but
+ * we know that they're really char **s.  We cast and deferences
+ * to arrive at char *s, and let strcmp do the traditional comparison
+ * and use its return value as our own.
+ *
+ * @param elem1 the address of a char *, which itself addresses a null-terminated
+ *              character array.
+ * @param elem2 the address of a char *, just like elem1.
+ * @return an integer representing the difference between the ASCII values of the
+ *         first non matching characters, or 0 if the two strings are equal.
+ */
+
+static int StringCompare(const void *elem1, const void *elem2)
+{
+    return strcmp(*(const char **) elem1, *(const char **) elem2);
+}
+
+/**
+ * Custom free function for malloc'ed strings
+ *
+ */
+
+static void StringFree(void *elem)
+{
+    char **s = (char**)elem;
+    free(*s);
 }

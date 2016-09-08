@@ -200,5 +200,5 @@ void *HashSetLookup(hashset *h, const void *elemAddr);
  */
 
 void HashSetMap(hashset *h, HashSetMapFunction mapfn, void *auxData);
-     
+
 #endif
