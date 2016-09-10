@@ -8,5 +8,10 @@
         "command": "cc -c -g -Wall -std=gnu99 -Wno-unused-function -m32 -o urlconnection.o urlconnection.c", 
         "directory": "/home/dissolved/Dropbox/CS107/assignment-4", 
         "file": "/home/dissolved/Dropbox/CS107/assignment-4/urlconnection.c"
+    }, 
+    {
+        "command": "cc -c -g -Wall -std=gnu99 -Wno-unused-function -m32 -o search-result.o search-result.c", 
+        "directory": "/home/dissolved/Dropbox/CS107/assignment-4", 
+        "file": "/home/dissolved/Dropbox/CS107/assignment-4/search-result.c"
     }
 ]
