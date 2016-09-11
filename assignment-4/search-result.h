@@ -2,6 +2,8 @@
 #define __searchresult_
 #include "vector.h"
 
+//extern vector allocation;
+//int allocCompare(const void *elemAddr1, const void *elemAddr2);
 /**
  * search-result.h
  * ---------------
@@ -12,12 +14,14 @@
 /**
  * Type: searchResultEntry
  * ------------------
- * Representation of search result query.
+ * Representation of search result struct:
+ * word - ptr to dynamically allocated C-string
+ * extrainfo - ptr to a vector of extraInfoEntries
  */
 
 typedef struct {
     char *word;
-    vector articles;
+    vector extraInfo;
 } searchResultEntry;
 
 /**
@@ -58,13 +62,12 @@ int SearchResultEntryHash(const void *elem, int numBuckets);
 /**
  * Type: article
  * -------------
- * Representation of an article
+ * Representation of an article struct - 2 dynamically allocated C-strings
  */
 
 typedef struct {
     char *title;
     char *url;
-    int counter;
 } article;
 
 /**
@@ -96,6 +99,37 @@ void ArticleFree(void *elem);
  */
 
 int ArticleCompare(const void *elem1, const void *elem2);
+
+/**
+ * Type: extraInfoEntry
+ * -------------
+ * Representation of an extraInfoEntry struct - 2 ints
+ */
+
+typedef struct {
+    int articleID;
+    int counter;
+} extraInfoEntry;
+
+/**
+ * Function: ExtraInfoEntryCompareByCounter
+ * -----------------------------
+ * Compares the two extraInfoEntries planted at the specified addresses.
+ * elem1 and elem2 are statically identified as void *s, but
+ *
+ */
+
+int ExtraInfoEntryCompareByCounter(const void *elem1, const void *elem2);
+
+/**
+ * Function: ExtraInfoEntryCompareByArticleID
+ * -----------------------------
+ * Compares the two extraInfoEntries planted at the specified addresses.
+ * elem1 and elem2 are statically identified as void *s, but
+ *
+ */
+
+int ExtraInfoEntryCompareByArticleID(const void *elem1, const void *elem2);
 
 
 #endif
