@@ -2,8 +2,6 @@
 #define __searchresult_
 #include "vector.h"
 
-//extern vector allocation;
-//int allocCompare(const void *elemAddr1, const void *elemAddr2);
 /**
  * search-result.h
  * ---------------
@@ -16,7 +14,7 @@
  * ------------------
  * Representation of search result struct:
  * word - ptr to dynamically allocated C-string
- * extrainfo - ptr to a vector of extraInfoEntries
+ * extrainfo - vector of extraInfoEntries
  */
 
 typedef struct {
@@ -86,16 +84,7 @@ void ArticleFree(void *elem);
  * Function: ArticleCompare
  * -----------------------------
  * Compares the two articles planted at the specified addresses.
- * elem1 and elem2 are statically identified as void *s, but
- * we know that they're really char **s.  We cast and dereference
- * to arrive at char *s, and let strcmp do the traditional comparison
- * and use its return value as our own.
- *
- * @param elem1 the address of a , which itself addresses a null-terminated
- *              character array.
- * @param elem2 the address of a char *, just like elem1.
- * @return an integer representing the difference between the ASCII values of the
- *         first non matching characters, or 0 if the two strings are equal.
+ * Comparison is done by the article's url
  */
 
 int ArticleCompare(const void *elem1, const void *elem2);
@@ -103,7 +92,8 @@ int ArticleCompare(const void *elem1, const void *elem2);
 /**
  * Type: extraInfoEntry
  * -------------
- * Representation of an extraInfoEntry struct - 2 ints
+ * Representation of an extraInfoEntry struct - 2 ints denoting some article's ID and
+ * a counter showing how many times a particular word shows up in the article
  */
 
 typedef struct {
@@ -115,7 +105,7 @@ typedef struct {
  * Function: ExtraInfoEntryCompareByCounter
  * -----------------------------
  * Compares the two extraInfoEntries planted at the specified addresses.
- * elem1 and elem2 are statically identified as void *s, but
+ * Comparison is done by Counter
  *
  */
 
@@ -125,7 +115,7 @@ int ExtraInfoEntryCompareByCounter(const void *elem1, const void *elem2);
  * Function: ExtraInfoEntryCompareByArticleID
  * -----------------------------
  * Compares the two extraInfoEntries planted at the specified addresses.
- * elem1 and elem2 are statically identified as void *s, but
+ * Comparison is done by ArticleID
  *
  */
 
