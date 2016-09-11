@@ -1,31 +1,34 @@
-For those of you in need of a hash function for strings,
-you can use the following, which is lifted from a textbook
-we used to use in CS106A.  You'll need to modify it so that
-it can be used by a hashset to store C strings (or structs
-keyed on C strings).
+# RSS News Feed Aggregation
 
-/** 
- * StringHash                     
- * ----------  
- * This function adapted from Eric Roberts' "The Art and Science of C"
- * It takes a string and uses it to derive a hash code, which   
- * is an integer in the range [0, numBuckets).  The hash code is computed  
- * using a method called "linear congruence."  A similar function using this     
- * method is described on page 144 of Kernighan and Ritchie.  The choice of                                                     
- * the value for the kHashMultiplier can have a significant effect on the                            
- * performance of the algorithm, but not on its correctness.                                                    
- * This hash function has the additional feature of being case-insensitive,  
- * hashing "Peter Pawlowski" and "PETER PAWLOWSKI" to the same code.  
- */  
+```
+$ make
+$ ./rss-news-search [path/to/a/file/with/a/list/of/RSS-feeds.txt]
+```
 
-static const signed long kHashMultiplier = -1664117991L;
-static int StringHash(const char *s, int numBuckets)  
-{            
-  int i;
-  unsigned long hashcode = 0;
-  
-  for (i = 0; i < strlen(s); i++)  
-    hashcode = hashcode * kHashMultiplier + tolower(s[i]);  
-  
-  return hashcode % numBuckets;                                
-}
+The program indexes RSS news feeds and prompts user to search through the resulting database and uses custom vector and hashmap structs under the hood.
+
+I used [libcurl](https://curl.haxx.se/libcurl/) and my own version of URLConnection struct to establish http connections.
+
+
+```
+Please enter a single query term that might be in our set of indices [enter to quit]: boston
+Nice! We found 11 articles that include the word "boston". [We'll just list 5, though.]
+
+1.) "Red Sox offense cant come through in 3-2 loss to Blue Jays" [search term occurs 17 times]
+    "http://www.boston.com/sports/boston-red-sox/2016/09/10/red-sox-blue-jays"
+
+2.) "Highlights: Boston College uses quick strikes to beat UMass 26-7" [search term occurs 17 times]
+    "http://www.boston.com/sports/college-sports/2016/09/10/bc-umass-26-7"
+
+3.) "The Mount Washington Observatory is offering a close look at winter" [search term occurs 15 times]
+    "http://www.boston.com/culture/travel/2016/09/10/the-mount-washington-observatory-is-offering-a-close-look-at-winter"
+
+4.) "Gisele Bundchen is helping Tom Brady train during his Deflategate suspension" [search term occurs 13 times]
+    "http://www.boston.com/sports/new-england-patriots/2016/09/11/gisele-bundchen-is-helping-tom-brady-train-during-his-deflategate-suspension"
+
+5.) "Clinton says deplorables comment is grossly generalistic" [search term occurs 10 times]
+    "http://www.boston.com/news/politics/2016/09/10/hillary-clinton-says-she-regrets-calling-trump-supporters-basket-of-deplorables"
+
+```
+
+Path to a list of RSS-feeds links is defined in `rss-news-search.c` or you can pass it as an argument to `rss-news-search`
