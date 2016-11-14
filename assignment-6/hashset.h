@@ -182,7 +182,7 @@ void HashSetEnter(hashset *h, const void *elemAddr);
  * for the element that is out of the [0, numBuckets) range.
  */
 
-void *HashSetLookup(hashset *h, const void *elemAddr);
+void *HashSetLookup(const hashset *h, const void *elemAddr);
 
 /**
  * Function: HashSetMap
@@ -200,5 +200,5 @@ void *HashSetLookup(hashset *h, const void *elemAddr);
  */
 
 void HashSetMap(hashset *h, HashSetMapFunction mapfn, void *auxData);
-     
+
 #endif
