@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <string.h>
 #include <ctype.h>
+#include <pthread.h>
 #include <curl/curl.h>
 
 #include "url.h"
@@ -15,13 +16,14 @@
 #include "search-result.h"
 
 static void Welcome(const char *welcomeTextFileName);
-static void BuildIndices(const char *feedsFileName, const hashset *stopwords, hashset *words, vector *seenArticles);
-static void ProcessFeed(const char *remoteDocumentName, hashset *seenUrls, const hashset *stopwords, hashset *words, vector *seenArticles);
-static void PullAllNewsItems(urlconnection *urlconn, hashset *seenUrls, const hashset *stopwords, hashset *words, vector *seenArticles);
+static void BuildIndices(const char *feedsFileName, const hashset *stopwords, hashset *words, vector *seenArticles, vector *threads);
+static void ProcessFeed(const char *remoteDocumentName, hashset *seenUrls, const hashset *stopwords, hashset *words, vector *seenArticles, vector *threads);
+static void PullAllNewsItems(urlconnection *urlconn, hashset *seenUrls, const hashset *stopwords, hashset *words, vector *seenArticles, vector *threads);
 static bool GetNextItemTag(streamtokenizer *st);
-static void ProcessSingleNewsItem(streamtokenizer *st, hashset *seenUrls, const hashset *stopwords, hashset *words, vector *seenArticles);
+static void ProcessSingleNewsItem(streamtokenizer *st, hashset *seenUrls, const hashset *stopwords, hashset *words, vector *seenArticles, vector *threads);
 static void ExtractElement(streamtokenizer *st, const char *htmlTag, char dataBuffer[], int bufferLength);
-static void ParseArticle(const char *articleTitle, const char *articleDescription, const char *articleURL, const hashset *stopwords, hashset *words, int article_index);
+static void ParseArticle(const char *articleTitle, const char *articleDescription, const char *articleURL, hashset *stopwords, hashset *words, int article_index);
+static void *NewParseArticle(void* args);
 static void ScanArticle(streamtokenizer *st, const char *articleTitle, const char *unused, const char *articleURL, const hashset *stopwords, hashset *words, int article_index);
 static void QueryIndices(const hashset *stopwords, const hashset *words, const vector *seenArticles);
 static void ProcessResponse(const char *word, const hashset *stopwords, const hashset *words, const vector *seenArticles);
@@ -30,6 +32,8 @@ static void BuildStopwordsHash(const char *stopWordsFileName, hashset *stopwords
 static int StringHash(const void *elem, int numBuckets);
 static int StringCompare(const void *elem1, const void *elem2);
 static void StringFree(void *elem);
+static void PthreadFree(void *elem);
+static void JoinPthreads(void *elem, void *aux);
 
 /**
  * Function: main
@@ -55,7 +59,7 @@ static const char *const stopWordsFile = "/home/dissolved/Dropbox/CS107/assignme
 
 int main(int argc, char **argv)
 {
-    // stopwords and seenWords are a hashset of char** - ptr to dynamically allocated C-strings
+    // stopwords and words are hashsets of char** - ptr to dynamically allocated C-strings
     hashset stopwords;
     HashSetNew(&stopwords, sizeof(char**), 701, StringHash, StringCompare, StringFree);
     BuildStopwordsHash(stopWordsFile, &stopwords);
@@ -68,15 +72,26 @@ int main(int argc, char **argv)
     vector seenArticles;
     VectorNew(&seenArticles, sizeof(article*), ArticleFree, 93);
 
+    // vector of threads that scan articles
+    vector threads;
+    VectorNew(&threads, sizeof(pthread_t*), PthreadFree, 20);
+
+    // initialize CURL before any thread starts
     curl_global_init(CURL_GLOBAL_ALL);
+
     Welcome(kWelcomeTextFile);
-    BuildIndices((argc == 1) ? kDefaultFeedsFile : argv[1], &stopwords, &words, &seenArticles);
+    BuildIndices((argc == 1) ? kDefaultFeedsFile : argv[1], &stopwords, &words, &seenArticles, &threads);
+
+    // wait all threads to terminate
+    VectorMap(&threads, JoinPthreads, NULL);
+
     QueryIndices(&stopwords, &words, &seenArticles);
     curl_global_cleanup();
 
     HashSetDispose(&stopwords);
     HashSetDispose(&words);
     VectorDispose(&seenArticles);
+    VectorDispose(&threads);
     return 0;
 }
 
@@ -128,7 +143,7 @@ static void Welcome(const char *welcomeTextFileName)
  * document and index its content.
  */
 
-static void BuildIndices(const char *feedsFileName, const hashset *stopwords, hashset *words, vector *seenArticles)
+static void BuildIndices(const char *feedsFileName, const hashset *stopwords, hashset *words, vector *seenArticles, vector *threads)
 {
   FILE *infile;
   streamtokenizer st;
@@ -142,7 +157,7 @@ static void BuildIndices(const char *feedsFileName, const hashset *stopwords, ha
   while (STSkipUntil(&st, ":") != EOF) { // ignore everything up to the first semicolon of the line
     STSkipOver(&st, ": ");		 // now ignore the semicolon and any whitespace directly after it
     STNextToken(&st, remoteFileName, sizeof(remoteFileName));
-    ProcessFeed(remoteFileName, &seenUrls, stopwords, words, seenArticles);
+    ProcessFeed(remoteFileName, &seenUrls, stopwords, words, seenArticles, threads);
   }
   printf("\nNumber of parsed articles: %d\n", HashSetCount(&seenUrls));
   HashSetDispose(&seenUrls);
@@ -161,7 +176,7 @@ static void BuildIndices(const char *feedsFileName, const hashset *stopwords, ha
  * for ParseArticle for information about what the different response codes mean.
  */
 
-static void ProcessFeed(const char *remoteDocumentName, hashset *seenUrls, const hashset *stopwords, hashset *words, vector *seenArticles)
+static void ProcessFeed(const char *remoteDocumentName, hashset *seenUrls, const hashset *stopwords, hashset *words, vector *seenArticles, vector *threads)
 {
   url u;
   urlconnection urlconn;
@@ -185,11 +200,11 @@ static void ProcessFeed(const char *remoteDocumentName, hashset *seenUrls, const
           printf("Unable to connect to \"%s\".  Ignoring...", u.serverName);
           break;
       case 200:
-          PullAllNewsItems(&urlconn, seenUrls, stopwords, words, seenArticles);
+          PullAllNewsItems(&urlconn, seenUrls, stopwords, words, seenArticles, threads);
           break;
       case 301:
       case 302:
-          ProcessFeed(urlconn.newUrl, seenUrls, stopwords, words, seenArticles);
+          ProcessFeed(urlconn.newUrl, seenUrls, stopwords, words, seenArticles, threads);
           break;
       default:
           printf("Connection to \"%s\" was established, but unable to retrieve \"%s\". [response code: %d, response message:\"%s\"]\n",
@@ -229,12 +244,12 @@ static void ProcessFeed(const char *remoteDocumentName, hashset *seenUrls, const
  */
 
 static const char *const kTextDelimiters = " \t\n\r\b!@$%^*()_+={[}]|\\'\":;/?.>,<~`";
-static void PullAllNewsItems(urlconnection *urlconn, hashset *seenUrls, const hashset *stopwords, hashset *words, vector *seenArticles)
+static void PullAllNewsItems(urlconnection *urlconn, hashset *seenUrls, const hashset *stopwords, hashset *words, vector *seenArticles, vector *threads)
 {
   streamtokenizer st;
   STNew(&st, urlconn->dataStream, kTextDelimiters, false);
   while (GetNextItemTag(&st)) { // if true is returned, then assume that <item ...> has just been read and pulled from the data stream
-      ProcessSingleNewsItem(&st, seenUrls, stopwords, words, seenArticles);
+      ProcessSingleNewsItem(&st, seenUrls, stopwords, words, seenArticles, threads);
   }
 
   STDispose(&st);
@@ -296,7 +311,16 @@ static const char *const kItemEndTag = "</item>";
 static const char *const kTitleTagPrefix = "<title";
 static const char *const kDescriptionTagPrefix = "<description";
 static const char *const kLinkTagPrefix = "<link";
-static void ProcessSingleNewsItem(streamtokenizer *st, hashset *seenUrls, const hashset *stopwords, hashset *words, vector *seenArticles)
+typedef struct parseArticleArgs {
+    char *articleTitle;
+    char *articleDescription;
+    char *articleUrl;
+    const hashset *stopWords;
+    hashset *words;
+    int artilceIndex;
+} parseArticleArgs;
+
+static void ProcessSingleNewsItem(streamtokenizer *st, hashset *seenUrls, const hashset *stopwords, hashset *words, vector *seenArticles, vector *threads)
 {
   char htmlTag[1024];
   char articleTitle[1024];
@@ -328,8 +352,23 @@ static void ProcessSingleNewsItem(streamtokenizer *st, hashset *seenUrls, const 
       VectorAppend(seenArticles, &current_article);
       int cur_index = VectorLength(seenArticles) - 1;
 
-      // parse the article
-      ParseArticle(articleTitle, articleDescription, articleURL, stopwords, words, cur_index);
+      // parse the article in a new thread
+      pthread_t *t = (pthread_t*) malloc(sizeof(pthread_t));
+      VectorAppend(threads, t);
+      parseArticleArgs *args = (parseArticleArgs*) malloc(sizeof(parseArticleArgs));
+      args->articleTitle = articleTitle;
+      args->articleDescription = articleDescription;
+      args->articleUrl = articleURL;
+      args->stopWords = stopwords;
+      args->words = words;
+      args->artilceIndex = cur_index;
+      printf("Args articleUrl: %s\n", args->articleUrl);
+      int error = pthread_create(t, NULL, &NewParseArticle, (void*)args);
+      if (error != 0)
+          fprintf(stderr, "Couldn't run thread, errno %d\n", error);
+      else
+          fprintf(stdout, "Thread started\n");
+      // ParseArticle(articleTitle, articleDescription, articleURL, stopwords, words, cur_index);
   } else {
       free(url);
       return;
@@ -387,8 +426,44 @@ static void ExtractElement(streamtokenizer *st, const char *htmlTag, char dataBu
  * no others appears all that often, and it'd be tedious to be fully exhaustive in our
  * enumeration of all possibilities.
  */
+static void *NewParseArticle(void *args)
+{
+  url u;
+  urlconnection urlconn;
+  streamtokenizer st;
 
-static void ParseArticle(const char *articleTitle, const char *articleDescription, const char *articleURL, const hashset *stopwords, hashset *words, int article_index)
+  URLNewAbsolute(&u, ((parseArticleArgs*)args)->articleUrl);
+  MyURLConnectionNew(&urlconn, &u);
+  printf("Full URL: %s\n", urlconn.fullUrl);
+
+  switch (urlconn.responseCode) {
+      case 0:
+          printf("Unable to connect to \"%s\".  Domain name or IP address is nonexistent.\n", ((parseArticleArgs*)args)->articleUrl);
+	      break;
+      case 200:
+          printf("Scanning \"%s\" from \"http://%s\"\n", ((parseArticleArgs*)args)->articleTitle, u.serverName);
+	      STNew(&st, urlconn.dataStream, kTextDelimiters, false);
+          ScanArticle(&st, ((parseArticleArgs*)args)->articleTitle, ((parseArticleArgs*)args)->articleDescription, ((parseArticleArgs*)args)->articleUrl, ((parseArticleArgs*)args)->stopWords, ((parseArticleArgs*)args)->words, ((parseArticleArgs*)args)->artilceIndex);
+          STDispose(&st);
+          break;
+      case 301:
+      case 302:
+          // just pretend we have the redirected URL all along, though index using the new URL and not the old one...
+          // NewParseArticle(articleTitle, articleDescription, urlconn.newUrl, stopwords, words, article_index);
+          printf("status 302, breaking from switch...");
+          break;
+      default:
+          printf("Unable to pull \"%s\" from \"%s\". [Response code: %d] Punting...\n", ((parseArticleArgs*)args)->articleTitle, u.serverName, urlconn.responseCode);
+          break;
+  }
+
+  MyURLConnectionDispose(&urlconn);
+  URLDispose(&u);
+  free(args);
+  return NULL;
+}
+
+static void ParseArticle(const char *articleTitle, const char *articleDescription, const char *articleURL, hashset *stopwords, hashset *words, int article_index)
 {
   url u;
   urlconnection urlconn;
@@ -680,4 +755,23 @@ static int StringCompare(const void *elem1, const void *elem2)
 static void StringFree(void *elem)
 {
     free(*(void**)elem);
+}
+
+/**
+ * Custom free function for malloc'ed pthreads
+ *
+ */
+static void PthreadFree(void *elem)
+{
+    free(*(void**)elem);
+}
+
+/**
+ * VectorMap function to join a vector of pthreads
+ *
+ */
+static void JoinPthreads(void *elem, void *aux)
+{
+    pthread_join(*(pthread_t*)elem, NULL);
+    fprintf(stdout, "Thread terminated\n");
 }

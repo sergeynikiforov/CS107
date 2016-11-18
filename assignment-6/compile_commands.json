@@ -1,17 +1,7 @@
 [
     {
-        "command": "cc -c -g -Wall -std=gnu99 -Wno-unused-function -m32 -o search-result.o search-result.c", 
-        "directory": "/home/dissolved/Dropbox/CS107/assignment-6", 
-        "file": "/home/dissolved/Dropbox/CS107/assignment-6/search-result.c"
-    }, 
-    {
-        "command": "cc -c -g -Wall -std=gnu99 -Wno-unused-function -m32 -o rss-news-search.o rss-news-search.c", 
+        "command": "cc -c -g -pthread -Wall -std=gnu99 -Wno-unused-function -m32 -o rss-news-search.o rss-news-search.c", 
         "directory": "/home/dissolved/Dropbox/CS107/assignment-6", 
         "file": "/home/dissolved/Dropbox/CS107/assignment-6/rss-news-search.c"
-    }, 
-    {
-        "command": "cc -c -g -Wall -std=gnu99 -Wno-unused-function -m32 -o urlconnection.o urlconnection.c", 
-        "directory": "/home/dissolved/Dropbox/CS107/assignment-6", 
-        "file": "/home/dissolved/Dropbox/CS107/assignment-6/urlconnection.c"
     }
 ]

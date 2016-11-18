@@ -13,9 +13,13 @@ DFLAG = ## -DNDEBUG
 UNAME = $(shell uname)
 ifeq ($(UNAME), solaris)
 	SOCKETLIB = -lsocket
+	THREADOPT = -mt
+endif
+ifeq ($(UNAME), Linux)
+	THREADOPT = -pthread
 endif
 
-CFLAGS = -g -Wall -std=gnu99 -Wno-unused-function $(DFLAG) -m32 -lcurl 
+CFLAGS = -g $(THREADOPT) -Wall -std=gnu99 -Wno-unused-function $(DFLAG) -m32 -lcurl 
 LDFLAGS = -g $(SOCKETLIB) -lnsl -lrssnews -L/home/dissolved/Dropbox/CS107/assignment-6/assn-6-rss-news-search-lib/$(UNAME)
 PFLAGS= -linker=/usr/pubsw/bin/ld -best-effort
 

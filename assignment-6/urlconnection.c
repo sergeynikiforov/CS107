@@ -35,7 +35,7 @@ void MyURLConnectionNew(urlconnection* urlconn, const url* u) {
     // set up FILE to store data stream - write to file
     //urlconn->dataStream = fopen(BUFFER_FILE_NAME, "w+");
     size_t size;
-    urlconn->dataStream =  open_memstream(&(urlconn->ptr), &size);
+    urlconn->dataStream = open_memstream(&(urlconn->ptr), &size);
     assert(urlconn->dataStream != NULL);
 
     // set response message to be empty
