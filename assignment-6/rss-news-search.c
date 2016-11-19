@@ -75,10 +75,10 @@ int main(int argc, char **argv)
 
     // vector of malloc'ed pthread_t pointers that scan articles
     vector threads;
-    VectorNew(&threads, sizeof(pthread_t*), PthreadFree, 4);
+    VectorNew(&threads, sizeof(pthread_t*), NULL, 4);
 
     // POSIX semaphore as a binary lock for hashset of words
-    sem_t wordsSemaphore;// = (sem_t*) malloc(sizeof(sem_t));
+    sem_t wordsSemaphore;
     int res = sem_init(&wordsSemaphore, 0, 1); // init to 1, share between threads
     assert(res != -1);
 
@@ -88,18 +88,16 @@ int main(int argc, char **argv)
     Welcome(kWelcomeTextFile);
     BuildIndices((argc == 1) ? kDefaultFeedsFile : argv[1], &stopwords, &words, &seenArticles, &threads, &wordsSemaphore);
 
-    //free(wordsSemaphore);
     // wait all threads to terminate
-    //VectorMap(&threads, JoinPthreads, NULL);
-    //VectorDispose(&threads);
-    sleep(10);
+    VectorMap(&threads, JoinPthreads, NULL);
+    VectorDispose(&threads);
     QueryIndices(&stopwords, &words, &seenArticles);
 
     curl_global_cleanup();
     HashSetDispose(&stopwords);
     HashSetDispose(&words);
     VectorDispose(&seenArticles);
-    return 0;
+    pthread_exit(NULL);
 }
 
 /**
@@ -319,6 +317,8 @@ static const char *const kItemEndTag = "</item>";
 static const char *const kTitleTagPrefix = "<title";
 static const char *const kDescriptionTagPrefix = "<description";
 static const char *const kLinkTagPrefix = "<link";
+
+// struct to pass arguments to a new thread
 typedef struct parseArticleArgs {
     char *articleTitle;
     char *articleDescription;
@@ -361,10 +361,12 @@ static void ProcessSingleNewsItem(streamtokenizer *st, hashset *seenUrls, const 
       VectorAppend(seenArticles, &current_article);
       int cur_index = VectorLength(seenArticles) - 1;
 
-      // parse the article in a new thread
+      // parse the article in a new joinable thread
       pthread_t *t = (pthread_t*) malloc(sizeof(pthread_t));
-      VectorAppend(threads, t);
-      printf("Length of threads vector: %d\n", VectorLength(threads));
+      pthread_attr_t attr;
+      pthread_attr_init(&attr);
+      pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+
       parseArticleArgs *args = (parseArticleArgs*) malloc(sizeof(parseArticleArgs));
       args->articleTitle = articleTitle;
       args->articleDescription = articleDescription;
@@ -374,11 +376,18 @@ static void ProcessSingleNewsItem(streamtokenizer *st, hashset *seenUrls, const 
       args->artilceIndex = cur_index;
       args->wordsSemaphore = wSem;
       printf("Args articleUrl: %s\n", args->articleUrl);
-      int error = pthread_create(t, NULL, &NewParseArticle, (void*)args);
-      if (error != 0)
+
+      int error = pthread_create(t, &attr, NewParseArticle, (void*)args);
+      if (error) {
           fprintf(stderr, "Couldn't run thread, errno %d\n", error);
-      else
+          pthread_attr_destroy(&attr);
+          exit(-1);
+      } else {
           fprintf(stdout, "Thread started\n");
+          VectorAppend(threads, t);
+          printf("Length of threads vector: %d\n", VectorLength(threads));
+      }
+      pthread_attr_destroy(&attr);
   } else {
       free(url);
       return;
@@ -471,7 +480,7 @@ static void *NewParseArticle(void *args)
   MyURLConnectionDispose(&urlconn);
   URLDispose(&u);
   free(args);
-  return NULL;
+  pthread_exit(NULL);
 }
 
 /**
@@ -758,6 +767,6 @@ static void PthreadFree(void *elem)
 static void JoinPthreads(void *elem, void *aux)
 {
     int res = pthread_join(*(pthread_t*)elem, NULL);
-    //assert(res == 0);
+    assert(res == 0);
     fprintf(stdout, "Thread terminated with status %d\n", res);
 }
