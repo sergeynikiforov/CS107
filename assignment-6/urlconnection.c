@@ -32,8 +32,7 @@ void MyURLConnectionNew(urlconnection* urlconn, const url* u) {
     // set up newUrl to be NULL at the beginning
     urlconn->newUrl = NULL;
 
-    // set up FILE to store data stream - write to file
-    //urlconn->dataStream = fopen(BUFFER_FILE_NAME, "w+");
+    // use open_memstream data stream
     size_t size;
     urlconn->dataStream = open_memstream(&(urlconn->ptr), &size);
     assert(urlconn->dataStream != NULL);
@@ -85,9 +84,6 @@ void MyURLConnectionNew(urlconnection* urlconn, const url* u) {
         // clean everything curl-related
         curl_easy_cleanup(curl);
     }
-
-    // get FILE ptr to the beginning
-    //rewind(urlconn->dataStream);
 }
 
 void MyURLConnectionDispose(urlconnection* urlconn) {
