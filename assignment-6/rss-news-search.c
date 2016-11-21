@@ -24,7 +24,7 @@ static void PullAllNewsItems(urlconnection *urlconn, hashset *seenUrls, const ha
 static bool GetNextItemTag(streamtokenizer *st);
 static void ProcessSingleNewsItem(streamtokenizer *st, hashset *seenUrls, const hashset *stopwords, hashset *words, vector *seenArticles, vector *threads, sem_t *wSem);
 static void ExtractElement(streamtokenizer *st, const char *htmlTag, char dataBuffer[], int bufferLength);
-static void *NewParseArticle(void* args);
+static void *ParseArticle(void* args);
 static void ScanArticle(streamtokenizer *st, const char *articleTitle, const char *unused, const char *articleURL, const hashset *stopwords, hashset *words, int article_index, sem_t *wSem);
 static void QueryIndices(const hashset *stopwords, const hashset *words, const vector *seenArticles);
 static void ProcessResponse(const char *word, const hashset *stopwords, const hashset *words, const vector *seenArticles);
@@ -53,9 +53,9 @@ static void JoinPthreads(void *elem, void *aux);
  * word appears.
  */
 
-static const char *const kWelcomeTextFile = "/home/dissolved/Dropbox/CS107/assignment-4/assn-4-rss-news-search-data/welcome.txt";
-static const char *const kDefaultFeedsFile = "/home/dissolved/Dropbox/CS107/assignment-4/assn-4-rss-news-search-data/rss-feeds-my.txt";
-static const char *const stopWordsFile = "/home/dissolved/Dropbox/CS107/assignment-4/assn-4-rss-news-search-data/stop-words.txt";
+static const char *const kWelcomeTextFile = "/home/dissolved/Dropbox/CS107/assignment-6/assn-6-rss-news-search-data/welcome.txt";
+static const char *const kDefaultFeedsFile = "/home/dissolved/Dropbox/CS107/assignment-6/assn-6-rss-news-search-data/rss-feeds-my.txt";
+static const char *const stopWordsFile = "/home/dissolved/Dropbox/CS107/assignment-6/assn-6-rss-news-search-data/stop-words.txt";
 
 
 int main(int argc, char **argv)
@@ -75,7 +75,7 @@ int main(int argc, char **argv)
 
     // vector of malloc'ed pthread_t pointers that scan articles
     vector threads;
-    VectorNew(&threads, sizeof(pthread_t*), NULL, 4);
+    VectorNew(&threads, sizeof(pthread_t*), PthreadFree, 4);
 
     // POSIX semaphore as a binary lock for hashset of words
     sem_t wordsSemaphore;
@@ -91,6 +91,8 @@ int main(int argc, char **argv)
     // wait all threads to terminate
     VectorMap(&threads, JoinPthreads, NULL);
     VectorDispose(&threads);
+
+    // query for words
     QueryIndices(&stopwords, &words, &seenArticles);
 
     curl_global_cleanup();
@@ -194,8 +196,8 @@ static void ProcessFeed(const char *remoteDocumentName, hashset *seenUrls, const
   printf("content type: %s\n", urlconn.contentType);
   printf("response code: %d\n", urlconn.responseCode);
 
-  int c = 0;
   if (urlconn.dataStream) {
+      int c = 0;
       while ((c = getc(urlconn.dataStream)) != EOF)
           putchar(c);
       rewind(urlconn.dataStream);
@@ -368,23 +370,23 @@ static void ProcessSingleNewsItem(streamtokenizer *st, hashset *seenUrls, const 
       pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
       parseArticleArgs *args = (parseArticleArgs*) malloc(sizeof(parseArticleArgs));
-      args->articleTitle = articleTitle;
-      args->articleDescription = articleDescription;
-      args->articleUrl = articleURL;
+      args->articleTitle = strdup(articleTitle);;
+      args->articleDescription = strdup(articleDescription);
+      args->articleUrl = strdup(articleURL);
       args->stopWords = stopwords;
       args->words = words;
       args->artilceIndex = cur_index;
       args->wordsSemaphore = wSem;
       printf("Args articleUrl: %s\n", args->articleUrl);
 
-      int error = pthread_create(t, &attr, NewParseArticle, (void*)args);
+      int error = pthread_create(t, &attr, ParseArticle, (void*)args);
       if (error) {
           fprintf(stderr, "Couldn't run thread, errno %d\n", error);
           pthread_attr_destroy(&attr);
           exit(-1);
       } else {
           fprintf(stdout, "Thread started\n");
-          VectorAppend(threads, t);
+          VectorAppend(threads, &t);
           printf("Length of threads vector: %d\n", VectorLength(threads));
       }
       pthread_attr_destroy(&attr);
@@ -445,7 +447,7 @@ static void ExtractElement(streamtokenizer *st, const char *htmlTag, char dataBu
  * no others appears all that often, and it'd be tedious to be fully exhaustive in our
  * enumeration of all possibilities.
  */
-static void *NewParseArticle(void *args)
+static void *ParseArticle(void *args)
 {
   url u;
   urlconnection urlconn;
@@ -461,7 +463,7 @@ static void *NewParseArticle(void *args)
 	      break;
       case 200:
           printf("Scanning \"%s\" from \"http://%s\"\n", ((parseArticleArgs*)args)->articleTitle, u.serverName);
-	      STNew(&st, urlconn.dataStream, kTextDelimiters, false);
+          STNew(&st, urlconn.dataStream, kTextDelimiters, false);
           ScanArticle(&st, ((parseArticleArgs*)args)->articleTitle, ((parseArticleArgs*)args)->articleDescription, ((parseArticleArgs*)args)->articleUrl, ((parseArticleArgs*)args)->stopWords, ((parseArticleArgs*)args)->words, ((parseArticleArgs*)args)->artilceIndex, ((parseArticleArgs*)args)->wordsSemaphore);
           STDispose(&st);
           break;
@@ -469,7 +471,7 @@ static void *NewParseArticle(void *args)
       case 302:
           // just pretend we have the redirected URL all along, though index using the new URL and not the old one...
           ((parseArticleArgs*)args)->articleUrl = urlconn.newUrl;
-          NewParseArticle(args);
+          ParseArticle(args);
           printf("status 302, breaking from switch...");
           break;
       default:
@@ -479,6 +481,11 @@ static void *NewParseArticle(void *args)
 
   MyURLConnectionDispose(&urlconn);
   URLDispose(&u);
+
+  // free passed args
+  free((void*)((parseArticleArgs*)args)->articleTitle);
+  free((void*)((parseArticleArgs*)args)->articleDescription);
+  free((void*)((parseArticleArgs*)args)->articleUrl);
   free(args);
   pthread_exit(NULL);
 }
@@ -766,7 +773,7 @@ static void PthreadFree(void *elem)
  */
 static void JoinPthreads(void *elem, void *aux)
 {
-    int res = pthread_join(*(pthread_t*)elem, NULL);
+    int res = pthread_join(**(pthread_t**)elem, NULL);
     assert(res == 0);
     fprintf(stdout, "Thread terminated with status %d\n", res);
 }
