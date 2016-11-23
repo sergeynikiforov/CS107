@@ -3,7 +3,6 @@
 #include <assert.h>
 #include <string.h>
 #include <ctype.h>
-#include <unistd.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <curl/curl.h>
@@ -208,17 +207,15 @@ static void ProcessFeed(const char *remoteDocumentName, hashset *seenUrls, const
 
   URLNewAbsolute(&u, remoteDocumentName);
   MyURLConnectionNew(&urlconn, &u);
-  printf("full url: %s\n", urlconn.fullUrl);
-  printf("response msg: %s\n", urlconn.responseMessage);
-  printf("content type: %s\n", urlconn.contentType);
-  printf("response code: %d\n", urlconn.responseCode);
 
+  /* comment out RSS feed being printed to stdout
   if (urlconn.dataStream) {
       int c = 0;
       while ((c = getc(urlconn.dataStream)) != EOF)
           putchar(c);
       rewind(urlconn.dataStream);
   }
+  */
 
   switch (urlconn.responseCode) {
       case 0:
@@ -396,7 +393,7 @@ static void ProcessSingleNewsItem(streamtokenizer *st, hashset *seenUrls, const 
       pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
       parseArticleArgs *args = (parseArticleArgs*) malloc(sizeof(parseArticleArgs));
-      args->articleTitle = strdup(articleTitle);;
+      args->articleTitle = strdup(articleTitle);
       args->articleDescription = strdup(articleDescription);
       args->articleUrl = strdup(articleURL);
       args->stopWords = stopwords;
@@ -405,18 +402,14 @@ static void ProcessSingleNewsItem(streamtokenizer *st, hashset *seenUrls, const 
       args->wordsSemaphore = wSem;
       args->httpSemaphore = httpSem;
       args->connSemaphore = connSem;
-      printf("Args articleUrl: %s\n", args->articleUrl);
 
       int error = pthread_create(t, &attr, ParseArticle, (void*)args);
       if (error) {
           fprintf(stderr, "Couldn't run thread, errno %d\n", error);
           pthread_attr_destroy(&attr);
           exit(-1);
-      } else {
-          fprintf(stdout, "Thread started\n");
-          VectorAppend(threads, &t);
-          printf("Length of threads vector: %d\n", VectorLength(threads));
-      }
+      } else VectorAppend(threads, &t);
+
       pthread_attr_destroy(&attr);
   } else {
       free(url);
@@ -492,14 +485,13 @@ static void *ParseArticle(void *args)
   assert(connResWait != -1);
 
   MyURLConnectionNew(&urlconn, &u);
-  printf("Full URL: %s\n", urlconn.fullUrl);
 
   switch (urlconn.responseCode) {
       case 0:
           printf("Unable to connect to \"%s\".  Domain name or IP address is nonexistent.\n", ((parseArticleArgs*)args)->articleUrl);
 	      break;
       case 200:
-          printf("Scanning \"%s\" from \"http://%s\"\n", ((parseArticleArgs*)args)->articleTitle, u.serverName);
+          // printf("Scanning \"%s\" from \"http://%s\"\n", ((parseArticleArgs*)args)->articleTitle, u.serverName);
           STNew(&st, urlconn.dataStream, kTextDelimiters, false);
           ScanArticle(&st, ((parseArticleArgs*)args)->articleTitle, ((parseArticleArgs*)args)->articleDescription, ((parseArticleArgs*)args)->articleUrl, ((parseArticleArgs*)args)->stopWords, ((parseArticleArgs*)args)->words, ((parseArticleArgs*)args)->artilceIndex, ((parseArticleArgs*)args)->wordsSemaphore);
           STDispose(&st);
@@ -510,7 +502,7 @@ static void *ParseArticle(void *args)
           free((void*)((parseArticleArgs*)args)->articleUrl);
           ((parseArticleArgs*)args)->articleUrl = strdup(urlconn.newUrl);
           ParseArticle(args);
-          printf("status 302, breaking from switch...");
+          printf("status 302, breaking from switch...\n");
           break;
       default:
           printf("Unable to pull \"%s\" from \"%s\". [Response code: %d] Punting...\n", ((parseArticleArgs*)args)->articleTitle, u.serverName, urlconn.responseCode);
@@ -586,8 +578,8 @@ static void ScanArticle(streamtokenizer *st, const char *articleTitle, const cha
                 searchResultEntry **found; // found is a ptr to searchResultEntry
 
                 // semaphore wait for words hashset
-                int res_wait = sem_wait(wSem);
-                assert(res_wait != -1);
+                int resWait = sem_wait(wSem);
+                assert(resWait != -1);
 
                 // try to find in seen words hashset
                 if ((found = HashSetLookup(words, &sre)) != NULL) {
@@ -615,8 +607,8 @@ static void ScanArticle(streamtokenizer *st, const char *articleTitle, const cha
                 }
 
                 // semaphore signal for words hashset
-                int res_post = sem_post(wSem);
-                assert(res_post != -1);
+                int resPost = sem_post(wSem);
+                assert(resPost != -1);
             } else {
                 ++numStopWords;
                 free(new_word);
@@ -624,14 +616,6 @@ static void ScanArticle(streamtokenizer *st, const char *articleTitle, const cha
         }
     }
   }
-
-  printf("\tWe counted %d well-formed words [including duplicates].\n", numWords);
-  printf("\tThe longest word scanned was \"%s\".\n", longestWord);
-  printf("\tNumber of found stopwords: %d\n", numStopWords);
-  if (strlen(longestWord) >= 15 && (strchr(longestWord, '-') == NULL))
-      printf(" [Ooooo... long word!]");
-
-  printf("\tTotal number of words in a hashset: %d\n", HashSetCount(words));
 }
 
 /**
@@ -645,6 +629,7 @@ static void ScanArticle(streamtokenizer *st, const char *articleTitle, const cha
 static void QueryIndices(const hashset *stopwords, const hashset *words, const vector *seenArticles)
 {
   char response[1024];
+  printf("Total number of words in a hashset: %d\n", HashSetCount(words));
   while (true) {
     printf("Please enter a single query term that might be in our set of indices [enter to quit]: ");
     fgets(response, sizeof(response), stdin);
@@ -749,7 +734,7 @@ static void BuildStopwordsHash(const char *stopWordsFileName, hashset *stopwords
       word = strdup(buffer);
       HashSetEnter(stopwords, &word);
   }
-  printf("\nNumber of elements in stopwords hashset: %d\n", HashSetCount(stopwords));
+  printf("Number of elements in stopwords hashset: %d\n\n", HashSetCount(stopwords));
   free(buffer);
   fclose(infile);
 }
@@ -831,7 +816,7 @@ static void JoinPthreads(void *elem, void *aux)
 {
     int res = pthread_join(**(pthread_t**)elem, NULL);
     assert(res == 0);
-    fprintf(stdout, "Thread terminated with status %d\n", res);
+    // fprintf(stdout, "Thread terminated with status %d\n", res);
 }
 
 /**
@@ -842,5 +827,5 @@ static void SemDestroy(void *elem, void *aux)
 {
     int res = sem_destroy(*(sem_t**)elem);
     assert(res == 0);
-    fprintf(stdout, "Semaphore destroyed with status %d\n", res);
+    // fprintf(stdout, "Semaphore destroyed with status %d\n", res);
 }
