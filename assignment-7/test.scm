@@ -1,5 +1,4 @@
-#!r6rs
-(import (rnrs))
+#lang scheme
 
 (display "hello\n")
 
@@ -34,3 +33,10 @@
                            (cons elem permutation))
                          (permute (remove items elem))))
                   items))))
+
+(define (two-permute seq)
+  (apply append (map (lambda (elem)
+                 (map (lambda (seq-1)
+                        (cons elem seq-1))
+                      (map list (remove seq elem))))
+               seq)))
