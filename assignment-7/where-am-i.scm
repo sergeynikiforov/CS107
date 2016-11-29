@@ -302,3 +302,61 @@
 
 (define (sort-points rated-points)
   (quicksort-rated-pts rated-points))
+
+;;
+;; Function: clumped-points
+;; ------------------------
+;; The function takes a list of points, rates them, sorts them,
+;; and then returns the half of the points with the smallest ratings.
+;;
+
+(define (clumped-points points-list)
+  (let ((half (if (odd? (length points-list))
+                  (/ (- (length points-list) 1) 2)
+                  (/ (length points-list) 2))))
+    (map (lambda (point)
+           (cadr point))
+         (prefix-of-list (sort-points (rate-points points-list)) half))))
+
+;;
+;; Function: average-point
+;; -----------------------
+;; The function takes a list of points and averages them all down to a single
+;; point. The average point is obtained by averaging all the x values to get
+;; an x value and all the y values to get a y value. 'average-point' also includes
+;; the distance rating indicating how far the average point was from all the points
+;;
+
+(define (average-point points-list)
+  (let ((avg-x (/ (apply + (map (lambda (point)
+                                  (x point))
+                                points-list)) (length points-list)))
+        (avg-y (/ (apply + (map (lambda (point)
+                                  (y point))
+                                points-list)) (length points-list))))
+    (list (distance-product (make-pt avg-x avg-y) points-list)
+          (make-pt avg-x avg-y))))
+
+;;
+;; Function: best-estimate
+;; -----------------------
+;; The function takes a guess (a list of circles), computes all the points of
+;; intersection, winnows those points down to those which are most clumped,
+;; and returns their average point
+;;
+
+(define (best-estimate circles-list)
+  (average-point (clumped-points (intersection-points circles-list))))
+
+;;
+;; Function: where-am-i
+;; --------------------
+;; The function, given a list of distances and a list of star locations,
+;; computes all the possible guesses, uses best-estimate to get an answer out of
+;; each one, and sorts the estimates in increasing order of distance rating.
+;; The result is a list of rated points. The first point is where you are,
+;; the rest are your other possible locations, in decreasing order of likelihood.
+;;
+
+(define (where-am-i distances stars)
+  (sort-points (map best-estimate (all-guesses distances stars))))
