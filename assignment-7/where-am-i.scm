@@ -228,3 +228,16 @@
   (apply append (map (lambda (two-circles)
                        (apply intersect two-circles))
                      (two-permute circles-list))))
+
+;;
+;; Function: distance-product
+;; --------------------------
+;; The function takes a point and a list of points and returns
+;; the product of the distances between that point and
+;; all the points in the list
+;;
+
+(define (distance-product point points-list)
+  (apply * (map (lambda (pt)
+                  (dist point pt))
+                (remove point points-list))))
