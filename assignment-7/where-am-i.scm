@@ -241,3 +241,64 @@
   (apply * (map (lambda (pt)
                   (dist point pt))
                 (remove point points-list))))
+
+;;
+;; Function: rate-points
+;; ---------------------
+;; The function takes a list of points and returns a list where
+;; each point is annotated to show its distance-product
+;; from the other points.
+;;
+
+(define (rate-points points-list)
+  (map (lambda (point)
+         (list (distance-product point points-list) point))
+       points-list))
+
+;;
+;; Function: partition-rated-pts
+;; -------------------
+;; Takes a pivot and a list of rated points and produces a pair two lists.
+;; The first of the two lists contains all of those rated pts less than the 
+;; pivot, and the second contains everything else.  Notice that
+;; the first list pair every produced is (() ()), and as the
+;; recursion unwinds exactly one of the two lists gets a new element
+;; cons'ed to the front of it.  
+;; 
+
+(define (partition-rated-pts pivot rated-pt-list)
+  (if (null? rated-pt-list) '(() ())
+      (let ((split-of-rest (partition-rated-pts pivot (cdr rated-pt-list))))
+        (if (< (caar rated-pt-list) pivot)
+            (list (cons (car rated-pt-list) (car split-of-rest)) (cadr split-of-rest))
+            (list (car split-of-rest) (cons (car rated-pt-list) (car (cdr split-of-rest))))))))
+
+;;
+;; Function: quicksort-rated-pts
+;; -------------------
+;; Implements the quicksort algorithm to sort lists of rated points from
+;; high to low.  If a list is of length 0 or 1, then it is trivially
+;; sorted.  Otherwise, we partition to cdr of the list around the car
+;; to generate two lists: those in the cdr that are smaller than the car,
+;; and those in the cdr that are greater than or equal to the car.  
+;; We then recursively quicksort the two lists, and then splice everything
+;; together in the proper order.
+;;
+
+(define (quicksort-rated-pts rated-pt-list)
+  (if (<= (length rated-pt-list) 1) rated-pt-list
+      (let ((split (partition-rated-pts (caar rated-pt-list) (cdr rated-pt-list))))
+        (append (quicksort-rated-pts (car split)) 
+                (list (car rated-pt-list)) 
+                (quicksort-rated-pts (cadr split))))))
+
+
+;;
+;; Function: sort-points
+;; ---------------------
+;; The function takes a list of rated points, and sorts them in
+;; ascending order of rating
+;;
+
+(define (sort-points rated-points)
+  (quicksort-rated-pts rated-points))
