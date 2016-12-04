@@ -9,14 +9,14 @@ def find_optimal_alignment(dna1, dna2):
     Computes the score of the optimal alignment of two DNA strands.
     :param dna1: DNA strand 1 - str of A, C, G, T
     :param dna2: DNA strand 2 - str of A, C, G, T
-    :return: tuple with score of the optimal alignment and modified strands themselves
+    :return: tuple with score of the optimal alignment and aligned strands themselves
     """
     def find_optimal(strand1, strand2, memo):
         """
         helper recursive function
         :param strand1: DNA strand 1 - str of A, C, G, T
         :param strand2: DNA strand 2 - str of A, C, G, T
-        :param memo: dict for memoization of recursive calls
+        :param memo: dict for memoization of recursive calls, keys - tuples of strands, values - call results
         :return: tuple of (score, final strand1, final strand2)
         """
         # base case if one of the two strands is empty, then there is only
@@ -119,8 +119,24 @@ def generate_random_dna_strand(minlength, maxlength):
 # This is more of a placeholder for what will ultimately
 # print out not only the score but the alignment as well.
 
-def print_alignment(score):
-    print("Optimal alignment score is ", score)
+def print_alignment(alignment):
+    """
+    This function pretty-prints the result of alignment
+    :param alignment: tuple of (score, strand1, strand2)
+    :return: None
+    """
+    # generate positives and negatives strs
+    positives = ''.join(map(lambda x: '1' if x[0] == x[1] else ' ',
+                            zip(alignment[1], alignment[2])))
+    negatives = ''.join(map(lambda x: ' ' if x[0] == x[1] else '2' if x[0] == ' ' or x[1] == ' ' else '1',
+                            zip(alignment[1], alignment[2])))
+
+    # print everything
+    print("Optimal alignment score is {}\n".format(alignment[0]))
+    print('+ ' + positives)
+    print('  ' + alignment[1])
+    print('  ' + alignment[2])
+    print('- ' + negatives + '\n')
 
 
 # Unit test main in place to do little more than
@@ -139,14 +155,12 @@ def main():
         answer = sys.stdin.readline()
         if answer == "no\n" or answer == "n\n":
             break
-        strand1 = generate_random_dna_strand(40, 60)
-        strand2 = generate_random_dna_strand(40, 60)
+        strand1 = generate_random_dna_strand(50, 60)
+        strand2 = generate_random_dna_strand(50, 60)
         print("Aligning these two strands: " + strand1)
-        print("                            " + strand2)
+        print("                            " + strand2 + '\n')
         alignment = find_optimal_alignment(strand1, strand2)
-        print(alignment[1])
-        print(alignment[2])
-        print_alignment(alignment[0])
+        print_alignment(alignment)
 
 
 if __name__ == "__main__":
