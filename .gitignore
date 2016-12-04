@@ -12,3 +12,7 @@ assn-3-vector-hashset-data
 # DrRacket temp files
 \#*
 *\~
+
+# PyCharm
+assignment-8/.idea/*
+
